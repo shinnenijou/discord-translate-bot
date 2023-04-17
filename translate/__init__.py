@@ -1,6 +1,7 @@
 import random
 import hashlib
 import asyncio
+from time import time
 
 import aiohttp
 
@@ -9,9 +10,12 @@ from .enums import *
 
 
 class BaiduTranslator:
-    def __init__(self, _appid: str, _key: str):
+    def __init__(self, _appid: str, _key: str, _timeout_sec: int = 1800):
         self.__appid = _appid
         self.__key = _key
+        self.__timeout_sec = _timeout_sec
+        self.__session = self.__session = aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=self.__timeout_sec))
+        self.__timer = 0
 
     def init(self):
         if not self.validate_config():
@@ -20,17 +24,25 @@ class BaiduTranslator:
 
         return True
 
-    @staticmethod
-    async def __get(url: str, _params: dict):
+    async def __get(self, url: str, _params: dict):
+        cur_time = int(time())
+        if cur_time > self.__timer:
+            self.__session = aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=self.__timeout_sec))
+            self.__timer = cur_time + self.__timeout_sec - 60
+
         result = EResult.ERROR
         resp = None
-        async with aiohttp.ClientSession() as session:
-            async with session.get(url, params=_params) as resp:
+        try:
+            async with self.__session.get(url, params=_params) as resp:
                 if resp.status == 200:
                     result = EResult.SUCCESS
                     resp = await resp.json()
                 else:
                     resp = None
+        except aiohttp.ClientConnectionError:
+            pass
+        except aiohttp.ClientTimeout:
+            pass
 
         return result, resp
 
