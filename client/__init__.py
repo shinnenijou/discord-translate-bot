@@ -31,7 +31,7 @@ class MyClient(discord.Client):
 
             first_flag = True
             for text in texts:
-                if self.__danmaku_sender.send(text):
+                if await self.__danmaku_sender.send(text):
                     utils.log_info(f'[Successfully]Message {message.content} -> {text}')
                 else:
                     utils.log_error(f'[Failed]Message {message.content} -> {text}')
