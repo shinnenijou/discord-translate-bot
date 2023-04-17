@@ -59,7 +59,7 @@ class BaiduTranslator:
         if result != EResult.SUCCESS:
             return result, []
 
-        result = int(data.get('error_code', 0))
+        result = int(data.get('error_code', EResult.SUCCESS))
 
         return result, [item.get('dst', '') for item in data.get('trans_result', [])]
 
