@@ -1,5 +1,6 @@
 import discord
 
+import utils
 from translate import BaiduTranslator
 from bilibili import DanmakuSender
 
@@ -12,14 +13,18 @@ class MyClient(discord.Client):
         self.__danmaku_sender = None
 
     async def on_ready(self):
-        print(f'Logged on as {self.user}!')
+        print(f'Logged on as {self.user}!, send danmaku as {self.__danmaku_sender.get_name()}')
 
     async def on_message(self, message):
         if message.author == self.user:
             return
 
-        dst_text = self.__translator.translate([message.content])
-        print(f'Message from {message.author}: {message.content} -> {dst_text[0]}')
+        dst_texts = self.__translator.translate([message.content])
+        for text in dst_texts:
+            if self.__danmaku_sender.send(text):
+                utils.log_info(f'[Successfully]Message {message.content} -> {text}')
+            else:
+                utils.log_error(f'[Failed]Message {message.content} -> {text}')
 
     def init_translator(self, _appid: str, _key: str):
         self.__translator = BaiduTranslator(_appid, _key)
