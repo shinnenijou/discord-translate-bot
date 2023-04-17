@@ -7,7 +7,16 @@ BAIDU_FIELDS = {
     'key': ''
 }
 
+BILIBILI_FIELDS = {
+    'room_id': '',
+    'sessdata': '',
+    'bili_jct': '',
+    'buvid3': ''
+}
+
 CONFIG_FIELDS = {
     'discord': DISCORD_FIELDS,
-    'baidu': BAIDU_FIELDS
+    'baidu': BAIDU_FIELDS,
+    'bilibili': BILIBILI_FIELDS
 }
+

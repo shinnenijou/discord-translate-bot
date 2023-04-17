@@ -2,35 +2,13 @@ import discord
 from configparser import RawConfigParser
 
 import utils
-from translate import BaiduTranslator
-
-
-class MyClient(discord.Client):
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.__translator = None
-
-    async def on_ready(self):
-        print(f'Logged on as {self.user}!')
-
-    async def on_message(self, message):
-        if message.author == self.user:
-            return
-
-        dst_text = self.__translator.translate([message.content])
-        print(f'Message from {message.author}: {message.content} -> {dst_text[0]}')
-
-    def init_translator(self, _appid: str, _key: str):
-        self.__translator = BaiduTranslator(_appid, _key)
-        return self.__translator.init()
-
+from client import MyClient
 
 def main():
     config = RawConfigParser()
     config.read('config.ini')
     if not utils.check_config(config):
-        print("[error]配置文件错误, 请检查配置文件")
+        utils.log_error("[error]配置文件错误, 请检查配置文件")
         return
 
     intents = discord.Intents.default()
@@ -38,6 +16,12 @@ def main():
 
     client = MyClient(intents=intents)
     if not client.init_translator(config['baidu']['appid'], config['baidu']['key']):
+        utils.log_error("[error]翻译模块初始化失败, 请检查配置文件")
+        return
+
+    bili_conf = config['bilibili']
+    if not client.init_danmaku_sender(bili_conf['room_id'], bili_conf['sessdata'], bili_conf['bili_jct'], bili_conf['buvid3']):
+        utils.log_error("[error]翻译模块初始化失败, 请检查配置文件")
         return
 
     token = config['discord']['token']
