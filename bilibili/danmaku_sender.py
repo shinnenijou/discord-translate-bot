@@ -1,17 +1,16 @@
 import os
-
-import requests
-from requests import exceptions, utils as req_utils
+import asyncio
 from time import time
+
+import aiohttp
 
 import utils
 from .enums import *
 
 
 class DanmakuSender:
-    def __init__(self, _room_id: str, _sessdata: str, _bili_jct: str, _buvid3: str, timeout=(3.05, 5)):
+    def __init__(self, _room_id: str, _sessdata: str, _bili_jct: str, _buvid3: str, _timeout_sec: int = 1800):
         # requests config
-        self.__session = requests.session()
         self.__url = "https://api.live.bilibili.com/msg/send"
         self.__headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.5005.63 Safari/537.36 Edg/102.0.1245.30',
@@ -19,18 +18,23 @@ class DanmakuSender:
             'Referer': f'https://live.bilibili.com/{_room_id}'
         }
 
-        self.__timeout = timeout
-
         # account config
         self.__room_id = _room_id
         self.__csrf = _bili_jct
-        cookie = f'buvid3={_buvid3};SESSDATA={_sessdata};bili_jct={_bili_jct}'
-        req_utils.add_dict_to_cookiejar(self.__session.cookies, {"Cookie": cookie})
+        self.__cookies = {'buvid3': _buvid3, 'SESSDATA': _sessdata, 'bili_jct': _bili_jct}
+        self.__timeout_sec = _timeout_sec
+        self.__session = aiohttp.ClientSession(
+            timeout=aiohttp.ClientTimeout(total=self.__timeout_sec),
+            headers=self.__headers,
+            cookies=self.__cookies
+        )
 
         # danmaku config
         self.__mode = EDanmakuPosition.Roll
         self.__color = EDanmakuColor.White
         self.__name = ''
+
+        self.__timer = 0
 
     def init(self):
         if self.get_user_info() == '':
@@ -43,54 +47,73 @@ class DanmakuSender:
 
         return True
 
-    def __post(self, url: str, data: dict):
+    async def __post(self, url: str, data: dict):
         """
         POST包装方法, 用于捕获异常
         :param url: 请求地址
         :param data: post数据
         :return: 返回结果枚举与响应体
         """
+        cur_time = int(time())
+        if cur_time > self.__timer:
+            self.__session = aiohttp.ClientSession(
+                timeout=aiohttp.ClientTimeout(total=self.__timeout_sec),
+                headers=self.__headers,
+                cookies=self.__cookies
+            )
+            self.__timer = cur_time + self.__timeout_sec - 60
+
         result = ESendResult.Error
-        resp = None
+        payload = None
         try:
-            resp = self.__session.post(url=url, headers=self.__headers, data=data, timeout=self.__timeout)
-
-            if resp.status_code == 200:
-                result = ESendResult.Success
-            else:
-                resp = None
-        except exceptions.ConnectionError:
+            async with self.__session.post(url=url, data=data) as resp:
+                if resp.status == 200:
+                    result = ESendResult.Success
+                    payload = await resp.json()
+                else:
+                    payload = None
+        except aiohttp.ClientConnectionError:
             pass
-        except exceptions.Timeout:
+        except aiohttp.ClientTimeout:
             pass
 
-        return result, resp
+        return result, payload
 
-    def __get(self, url: str, params: dict = None):
+    async def __get(self, url: str, params: dict = None):
         """
         GET包装方法, 用于捕获异常
         :param url: 请求地址
         :param params: 请求参数
         :return: 返回结果枚举与响应体
         """
+        cur_time = int(time())
+        if cur_time > self.__timer:
+            self.__session = aiohttp.ClientSession(
+                timeout=aiohttp.ClientTimeout(total=self.__timeout_sec),
+                headers=self.__headers,
+                cookies=self.__cookies
+            )
+            self.__timer = cur_time + self.__timeout_sec - 60
+
         result = ESendResult.Error
-        resp = None
+        payload = None
         try:
-            resp = self.__session.get(url=url, headers=self.__headers, params=params, timeout=self.__timeout)
+            async with self.__session.get(url=url, params=params) as resp:
 
-            if resp.status_code == 200:
-                result = ESendResult.Success
-            else:
-                resp = None
-        except exceptions.ConnectionError:
+                if resp.status == 200:
+                    result = ESendResult.Success
+                    payload = await resp.json()
+                else:
+                    payload = None
+        except aiohttp.ClientConnectionError:
             pass
-        except exceptions.Timeout:
+        except aiohttp.ClientTimeout:
             pass
 
-        return result, resp
+        return result, payload
 
-    def __send(self, msg: str) -> tuple[ESendResult, dict]:
-        data={
+    async def __send(self, msg: str) -> tuple[ESendResult, dict]:
+        data = {
             "color": self.__color,
             "fontsize": 25,
             "mode": self.__mode,
@@ -101,20 +124,19 @@ class DanmakuSender:
             "csrf_token": self.__csrf,
             "csrf": self.__csrf,
         }
-        result, resp = self.__post(self.__url, data)
+        result, resp = await self.__post(self.__url, data)
         if result == ESendResult.Success:
-            resp = resp.json()
             result = resp['code']
 
         return result, resp
 
-    def send(self, msg: str):
+    async def send(self, msg: str):
         """
         向直播间发送弹幕
         :param msg: 待发送的弹幕内容
         :return: 服务器返回的响应体
         """
-        result, resp = self.__send(msg)
+        result, resp = await self.__send(msg)
         if result == ESendResult.Success:
             return True
 
@@ -132,8 +154,7 @@ class DanmakuSender:
         """获取用户在直播间内的当前弹幕颜色、弹幕位置、发言字数限制等信息"""
         url = "https://api.live.bilibili.com/xlive/web-room/v1/index/getInfoByUser"
         params = {"room_id": self.__room_id}
-        result, resp = self.__get(url=url, params=params)
-        resp = resp.json()
+        result, resp = asyncio.get_event_loop().run_until_complete(self.__get(url=url, params=params))
         if result == ESendResult.Success and resp['code'] == ESendResult.Success:
             danmaku_config = resp["data"]["property"]["danmu"]
             self.__mode = danmaku_config["mode"]
@@ -152,8 +173,7 @@ class DanmakuSender:
             "csrf_token": self.__csrf,
             "csrf": self.__csrf,
         }
-        result, resp = self.__post(url=url, data=data)
-        resp = resp.json()
+        result, resp = asyncio.get_event_loop().run_until_complete(self.__post(url=url, data=data))
         if result == ESendResult.Success and resp['code'] == ESendResult.Success:
             self.__mode = mode
             self.__color = color
@@ -163,11 +183,10 @@ class DanmakuSender:
     def get_user_info(self):
         """获取用户信息"""
         url = "https://api.bilibili.com/x/space/myinfo"
-        result, resp = self.__get(url=url)
+        result, resp = asyncio.get_event_loop().run_until_complete(self.__get(url=url))
         if result == ESendResult.Error:
             return ''
 
-        resp = resp.json()
         if result == ESendResult.Success and resp['code'] == ESendResult.Success:
             self.__name = resp['data']['name']
 
