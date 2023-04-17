@@ -21,3 +21,16 @@ def check_config(config: RawConfigParser) -> bool:
                 return False
 
     return True
+
+
+def slice_text(text: str, max_length: int = 20, prefix: str = '【', suffix: str = '】') -> list:
+    texts = []
+    text_max_length = max_length - len(prefix) - len(suffix)
+    if len(text) <= text_max_length:
+        texts.append(prefix + text + suffix)
+    else:
+        while len(text) <= text_max_length:
+            texts.append(prefix + text[:text_max_length] + suffix)
+            text = text[text_max_length:]
+
+    return texts

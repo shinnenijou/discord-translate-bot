@@ -4,6 +4,7 @@ from configparser import RawConfigParser
 import utils
 from client import MyClient
 
+
 def main():
     config = RawConfigParser()
     config.read('config.ini')
