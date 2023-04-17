@@ -33,13 +33,13 @@ class DanmakuSender:
         self.__timer = 0
 
     def init(self):
-        if self.get_user_info() == '':
-            utils.log_error("获取用户信息失败, 请检查配置文件或网络状态")
-            return False
-
-        if self.get_danmaku_config() == (None, None):
-            utils.log_error("获取弹幕配置失败, 请检查配置文件")
-            return False
+        # if self.get_user_info() == '':
+        #     utils.log_error("获取用户信息失败, 请检查配置文件或网络状态")
+        #     return False
+        #
+        # if self.get_danmaku_config() == (None, None):
+        #     utils.log_error("获取弹幕配置失败, 请检查配置文件")
+        #     return False
 
         return True
 
