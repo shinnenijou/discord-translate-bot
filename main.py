@@ -1,27 +1,21 @@
 import discord
 from configparser import RawConfigParser
 
-config = RawConfigParser()
-config.read('config.ini')
+
+class MyClient(discord.Client):
+    async def on_ready(self):
+        print(f'Logged on as {self.user}!')
+
+    async def on_message(self, message):
+        print(f'Message from {message.author}: {message.content}')
+
 
 intents = discord.Intents.default()
 intents.message_content = True
 
-client = discord.Client(intents=intents)
-
-
-@client.event
-async def on_ready():
-    print(f'We have logged in as {client.user}')
-
-
-@client.event
-async def on_message(message):
-    if message.author == client.user:
-        return
-
-    if message.content.startswith('$hello'):
-        await message.channel.send('Hello!')
+client = MyClient(intents=intents)
+config = RawConfigParser()
+config.read('config.ini')
 
 token = config['account']['token']
 client.run(token)
