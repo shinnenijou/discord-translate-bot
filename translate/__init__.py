@@ -27,6 +27,8 @@ class BaiduTranslator:
     async def __get(self, url: str, _params: dict):
         cur_time = int(time())
         if cur_time > self.__timer:
+            if self.__session is not None:
+                await self.__session.close()
             self.__session = aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=self.__timeout_sec))
             self.__timer = cur_time + self.__timeout_sec - 60
 

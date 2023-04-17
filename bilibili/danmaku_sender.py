@@ -52,6 +52,9 @@ class DanmakuSender:
         """
         cur_time = int(time())
         if cur_time > self.__timer:
+            if self.__session is not None:
+                await self.__session.close()
+
             self.__session = aiohttp.ClientSession(
                 timeout=aiohttp.ClientTimeout(total=self.__timeout_sec),
                 headers=self.__headers,
@@ -86,6 +89,9 @@ class DanmakuSender:
         """
         cur_time = int(time())
         if cur_time > self.__timer:
+            if self.__session is not None:
+                await self.__session.close()
+
             self.__session = aiohttp.ClientSession(
                 timeout=aiohttp.ClientTimeout(total=self.__timeout_sec),
                 headers=self.__headers,
@@ -105,7 +111,9 @@ class DanmakuSender:
                     payload = None
         except aiohttp.ClientConnectionError:
             pass
-        except aiohttp.ClientTimeout:
+        except aiohttp.ServerTimeoutError:
+            pass
+        except aiohttp.ClientError:
             pass
 
         return result, payload
