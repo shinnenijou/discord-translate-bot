@@ -74,7 +74,9 @@ class DanmakuSender:
                     payload = None
         except aiohttp.ClientConnectionError:
             pass
-        except aiohttp.ClientTimeout:
+        except aiohttp.ServerTimeoutError:
+            pass
+        except aiohttp.ClientError:
             pass
 
         return result, payload
