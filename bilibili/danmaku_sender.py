@@ -23,11 +23,7 @@ class DanmakuSender:
         self.__csrf = _bili_jct
         self.__cookies = {'buvid3': _buvid3, 'SESSDATA': _sessdata, 'bili_jct': _bili_jct}
         self.__timeout_sec = _timeout_sec
-        self.__session = aiohttp.ClientSession(
-            timeout=aiohttp.ClientTimeout(total=self.__timeout_sec),
-            headers=self.__headers,
-            cookies=self.__cookies
-        )
+        self.__session = None
 
         # danmaku config
         self.__mode = EDanmakuPosition.Roll
