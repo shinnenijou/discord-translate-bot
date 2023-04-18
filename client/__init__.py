@@ -49,7 +49,7 @@ class MyClient(discord.Client):
                 if first_flag:
                     first_flag = False
                 else:
-                    sleep(1)
+                    sleep(utils.SEND_INTERVAL)
 
     def init_translator(self, _appid: str, _key: str):
         self.__translator = BaiduTranslator(_appid, _key)

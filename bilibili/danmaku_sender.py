@@ -1,6 +1,6 @@
 import os
 import asyncio
-from time import time
+from time import time, sleep
 
 import aiohttp
 import requests
@@ -147,6 +147,12 @@ class DanmakuSender:
         :param msg: 待发送的弹幕内容
         :return: 服务器返回的响应体
         """
+        result, resp = await self.__send(msg)
+        if result == ESendResult.Success:
+            return True
+
+        # Retry
+        sleep(utils.SEND_INTERVAL)
         result, resp = await self.__send(msg)
         if result == ESendResult.Success:
             return True

@@ -20,3 +20,4 @@ CONFIG_FIELDS = {
     'bilibili': BILIBILI_FIELDS
 }
 
+SEND_INTERVAL = 1
