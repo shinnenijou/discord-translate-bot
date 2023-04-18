@@ -151,10 +151,10 @@ class DanmakuSender:
         if result == ESendResult.Success:
             return True
 
-        if result == ESendResult.DuplicateMsg:
-            utils.log_error("发送失败：重复弹幕")
+        if result in ErrorString:
+            utils.log_error(f"消息{msg}： {ErrorString[result]}")
         else:
-            utils.log_error(f"发送失败：未知错误, 错误代码： {result}")
+            utils.log_error(f"消息{msg}：未知错误： {result}")
 
         return False
 
