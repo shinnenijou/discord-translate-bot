@@ -4,7 +4,7 @@ import discord
 
 import utils
 from translate import BaiduTranslator
-from bilibili import DanmakuSender, BiliLiveAntiShield
+from bilibili import DanmakuSender, BiliLiveAntiShield, words, rules
 
 
 class MyClient(discord.Client):
@@ -35,6 +35,7 @@ class MyClient(discord.Client):
 
         dst_texts = await self.__translator.translate([message.content])
         for dst_text in dst_texts:
+            dst_text = self.__anti_shield.deal(dst_text)
             texts = utils.slice_text(dst_text)
 
             first_flag = True
@@ -59,5 +60,5 @@ class MyClient(discord.Client):
         return self.__danmaku_sender.init()
 
     def init_anti_shield(self):
-        self.__anti_shield = BiliLiveAntiShield()
-        return self.__anti_shield.init()
+        self.__anti_shield = BiliLiveAntiShield(rules, words)
+        return True

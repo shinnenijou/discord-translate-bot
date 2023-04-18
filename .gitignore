@@ -153,3 +153,4 @@ cython_debug/
 
 # myself
 *.ini
+.DS_Store

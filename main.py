@@ -27,6 +27,11 @@ def main():
         utils.sync(client.close())
         return
 
+    if not client.init_anti_shield():
+        utils.log_error("[error]反屏蔽模块初始化失败, 请检查配置文件")
+        utils.sync(client.close())
+        return
+
     token = config['discord']['token']
     client.run(token)
 

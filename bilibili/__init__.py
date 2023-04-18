@@ -1,3 +1,4 @@
 from .danmaku_sender import *
-from .anti_shield import *
+from .BiliLiveAntiShield import *
+from .BiliLiveShieldWords import *
 
