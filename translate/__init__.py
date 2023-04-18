@@ -1,9 +1,10 @@
 import random
 import hashlib
-import asyncio
+
 from time import time
 
 import aiohttp
+import requests
 
 import utils
 from .enums import *
@@ -14,7 +15,7 @@ class BaiduTranslator:
         self.__appid = _appid
         self.__key = _key
         self.__timeout_sec = _timeout_sec
-        self.__session = self.__session = aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=self.__timeout_sec))
+        self.__session = None
         self.__timer = 0
 
     def init(self):
@@ -23,6 +24,25 @@ class BaiduTranslator:
             return False
 
         return True
+
+    async def close(self):
+        if self.__session is not None:
+            await self.__session.close()
+
+    def __make_params(self, _texts: list[str], _from: str = 'auto', _to: str = 'zh'):
+        salt = str(random.randint(10000000, 99999999))
+        q = '\n'.join([s for s in _texts])
+        sign = hashlib.md5((self.__appid + q + salt + self.__key).encode('utf-8'))
+        params = {
+            'from': _from,
+            'to': _to,
+            'appid': self.__appid,
+            'salt': salt,
+            'sign': sign.hexdigest(),
+            'q': q
+        }
+
+        return params
 
     async def __get(self, url: str, _params: dict):
         cur_time = int(time())
@@ -52,19 +72,7 @@ class BaiduTranslator:
 
     async def __translate(self, _texts: list[str], _from: str = 'auto', _to: str = 'zh'):
         api = "https://fanyi-api.baidu.com/api/trans/vip/translate"
-
-        salt = str(random.randint(10000000, 99999999))
-        q = '\n'.join([s for s in _texts])
-        sign = hashlib.md5((self.__appid + q + salt + self.__key).encode('utf-8'))
-        params = {
-            'from': _from,
-            'to': _to,
-            'appid': self.__appid,
-            'salt': salt,
-            'sign': sign.hexdigest(),
-            'q': q
-        }
-
+        params = self.__make_params(_texts, _from, _to)
         result, data = await self.__get(api, params)
         if result != EResult.SUCCESS:
             return result, []
@@ -81,6 +89,13 @@ class BaiduTranslator:
 
         return texts
 
-    async def validate_config(self):
-        result, _ = asyncio.get_event_loop().run_until_complete(self.__translate([""]))
+    def validate_config(self):
+        api = "https://fanyi-api.baidu.com/api/trans/vip/translate"
+        params = self.__make_params([''])
+        resp = requests.get(url=api, params=params)
+        if resp.status_code != 200:
+            return False
+
+        result = int(resp.json().get('error_code', EResult.SUCCESS))
+
         return result == EResult.EMPTYPARAM

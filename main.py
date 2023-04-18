@@ -18,11 +18,13 @@ def main():
     client = MyClient(intents=intents)
     if not client.init_translator(config['baidu']['appid'], config['baidu']['key']):
         utils.log_error("[error]翻译模块初始化失败, 请检查配置文件")
+        utils.sync(client.close())
         return
 
     bili_conf = config['bilibili']
     if not client.init_danmaku_sender(bili_conf['room_id'], bili_conf['sessdata'], bili_conf['bili_jct'], bili_conf['buvid3']):
-        utils.log_error("[error]翻译模块初始化失败, 请检查配置文件")
+        utils.log_error("[error]弹幕模块初始化失败, 请检查配置文件")
+        utils.sync(client.close())
         return
 
     token = config['discord']['token']

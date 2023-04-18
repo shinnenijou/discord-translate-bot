@@ -1,14 +1,15 @@
 from configparser import RawConfigParser
+import asyncio
 
 from .const import *
 
 
 def log_error(msg: str):
-    pass
+    print("[ERROR]" + msg)
 
 
 def log_info(msg: str):
-    pass
+    print("[INFO]" + msg)
 
 
 def check_config(config: RawConfigParser) -> bool:
@@ -34,3 +35,8 @@ def slice_text(text: str, max_length: int = 20, prefix: str = '【', suffix: str
             text = text[text_max_length:]
 
     return texts
+
+
+def sync(coroutine):
+    return asyncio.get_event_loop().run_until_complete(coroutine)
+

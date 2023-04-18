@@ -3,6 +3,7 @@ import asyncio
 from time import time
 
 import aiohttp
+import requests
 
 import utils
 from .enums import *
@@ -33,15 +34,19 @@ class DanmakuSender:
         self.__timer = 0
 
     def init(self):
-        # if self.get_user_info() == '':
-        #     utils.log_error("获取用户信息失败, 请检查配置文件或网络状态")
-        #     return False
-        #
-        # if self.get_danmaku_config() == (None, None):
-        #     utils.log_error("获取弹幕配置失败, 请检查配置文件")
-        #     return False
+        if self.get_user_info() == '':
+            utils.log_error("获取用户信息失败, 请检查配置文件或网络状态")
+            return False
+
+        if self.get_danmaku_config() == (None, None):
+            utils.log_error("获取弹幕配置失败, 请检查配置文件")
+            return False
 
         return True
+
+    async def close(self):
+        if self.__session is not None:
+            await self.__session.close()
 
     async def __post(self, url: str, data: dict):
         """
@@ -160,9 +165,13 @@ class DanmakuSender:
         """获取用户在直播间内的当前弹幕颜色、弹幕位置、发言字数限制等信息"""
         url = "https://api.live.bilibili.com/xlive/web-room/v1/index/getInfoByUser"
         params = {"room_id": self.__room_id}
-        result, resp = asyncio.get_event_loop().run_until_complete(self.__get(url=url, params=params))
-        if result == ESendResult.Success and resp['code'] == ESendResult.Success:
-            danmaku_config = resp["data"]["property"]["danmu"]
+        try:
+            resp = requests.get(url=url, headers=self.__headers, params=params, cookies=self.__cookies)
+        except:
+            return None, None
+
+        if resp.status_code == 200 and resp.json()['code'] == ESendResult.Success:
+            danmaku_config = resp.json()["data"]["property"]["danmu"]
             self.__mode = danmaku_config["mode"]
             self.__color = danmaku_config["color"]
 
@@ -179,21 +188,26 @@ class DanmakuSender:
             "csrf_token": self.__csrf,
             "csrf": self.__csrf,
         }
-        result, resp = asyncio.get_event_loop().run_until_complete(self.__post(url=url, data=data))
-        if result == ESendResult.Success and resp['code'] == ESendResult.Success:
+        try:
+            resp = requests.post(url=url, headers=self.__headers, cookies=self.__cookies, data=data)
+        except:
+            return ESendResult.Error
+
+        if resp.status_code == 200 and resp.json()['code'] == ESendResult.Success:
             self.__mode = mode
             self.__color = color
 
-        return result
+        return resp.json()['code']
 
     def get_user_info(self):
         """获取用户信息"""
         url = "https://api.bilibili.com/x/space/myinfo"
-        result, resp = asyncio.get_event_loop().run_until_complete(self.__get(url=url))
-        if result == ESendResult.Error:
-            return ''
+        try:
+            resp = requests.get(url=url, headers=self.__headers, cookies=self.__cookies)
+        except:
+            return ""
 
-        if result == ESendResult.Success and resp['code'] == ESendResult.Success:
-            self.__name = resp['data']['name']
+        if resp.status_code == 200 and resp.json()['code'] == ESendResult.Success:
+            self.__name = resp.json()['data']['name']
 
         return self.__name

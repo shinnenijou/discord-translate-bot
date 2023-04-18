@@ -15,6 +15,14 @@ class MyClient(discord.Client):
         self.__danmaku_sender = None
         self.__anti_shield = None
 
+    async def close(self) -> None:
+        await super().close()
+        if self.__translator is not None:
+            await self.__translator.close()
+
+        if self.__danmaku_sender is not None:
+            await self.__danmaku_sender.close()
+
     async def on_ready(self):
         print(f'Logged on as {self.user}!, send danmaku as {self.__danmaku_sender.get_name()}')
 
