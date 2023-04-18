@@ -1,6 +1,6 @@
 import os
 import asyncio
-from time import time, sleep
+from time import time
 
 import aiohttp
 import requests
@@ -152,7 +152,7 @@ class DanmakuSender:
             return True
 
         # Retry
-        sleep(utils.SEND_INTERVAL)
+        await asyncio.sleep(utils.SEND_INTERVAL)
         result, resp = await self.__send(msg)
         if result == ESendResult.Success:
             return True
