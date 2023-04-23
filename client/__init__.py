@@ -33,6 +33,8 @@ class MyClient(discord.Client):
         if message.content == '':
             return
 
+        await asyncio.sleep(utils.SEND_LAG)
+
         dst_texts = await self.__translator.translate([message.content])
         for dst_text in dst_texts:
             dst_text = self.__anti_shield.deal(dst_text)
