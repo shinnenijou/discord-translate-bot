@@ -42,3 +42,8 @@ def slice_text(text: str, max_length: int = 20, prefix: str = '【', suffix: str
 def sync(coroutine):
     return asyncio.get_event_loop().run_until_complete(coroutine)
 
+def replace(text: str) -> str:
+    text.replace('メディア', 'ミリヤ')
+    text.replace('ミディア', 'ミリヤ')
+
+    return text

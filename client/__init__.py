@@ -42,6 +42,7 @@ class MyClient(discord.Client):
 
             first_flag = True
             for text in texts:
+                text = utils.replace(text)
                 result = await self.__danmaku_sender.send(text)
                 if result:
                     utils.log_info(f'[Successfully]Message {message.content} -> {text}')
