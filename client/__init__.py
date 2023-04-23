@@ -35,14 +35,14 @@ class MyClient(discord.Client):
 
         await asyncio.sleep(utils.SEND_LAG)
 
-        dst_texts = await self.__translator.translate([message.content])
+        content = utils.test_processor.deal(message.content)
+        dst_texts = await self.__translator.translate([content])
         for dst_text in dst_texts:
             dst_text = self.__anti_shield.deal(dst_text)
             texts = utils.slice_text(dst_text)
 
             first_flag = True
             for text in texts:
-                text = utils.test_processor.deal(text)
                 result = await self.__danmaku_sender.send(text)
                 if result:
                     utils.log_info(f'[Successfully]Message {message.content} -> {text}')
