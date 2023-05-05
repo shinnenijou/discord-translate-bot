@@ -128,7 +128,7 @@ class MyClient(discord.Client):
         return True
 
     async def __start_channel(self, message):
-        channel_id = int(message.channel.id)
+        channel_id = str(message.channel.id)
         if channel_id not in self.__channel_config:
             return
 
@@ -153,7 +153,7 @@ class MyClient(discord.Client):
             file.write(json.dumps(self.__channel_config))
 
     async def __stop_channel(self, message):
-        channel_id = int(message.channel.id)
+        channel_id = str(message.channel.id)
         if channel_id not in self.__channel_config:
             return
 
@@ -173,7 +173,7 @@ class MyClient(discord.Client):
         if len(params) < 2:
             return
 
-        channel_id = int(message.channel.id)
+        channel_id = str(message.channel.id)
         if channel_id not in self.__channel_config:
             self.__channel_config[channel_id] = {}
         elif self.__channel_config[channel_id].get('status', 0) == 1:
