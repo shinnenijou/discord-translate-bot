@@ -17,7 +17,6 @@ BILIBILI_FIELDS = {
 CONFIG_FIELDS = {
     'discord': DISCORD_FIELDS,
     'baidu': BAIDU_FIELDS,
-    'bilibili': BILIBILI_FIELDS
 }
 
 SEND_INTERVAL = 1

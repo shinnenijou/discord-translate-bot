@@ -42,6 +42,7 @@ def slice_text(text: str, max_length: int = 20, prefix: str = '【', suffix: str
 def sync(coroutine):
     return asyncio.get_event_loop().run_until_complete(coroutine)
 
+
 class TextProcessor:
     def __init__(self):
         self.__words = {}
@@ -59,4 +60,5 @@ class TextProcessor:
 
         return text
 
-test_processor = TextProcessor()
+
+text_processor = TextProcessor()

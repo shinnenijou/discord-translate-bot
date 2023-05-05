@@ -16,13 +16,17 @@ def main():
     intents.message_content = True
 
     client = MyClient(intents=intents)
+    if not client.init_channel_config():
+        utils.log_error("[error]频道设置初始化失败, 请检查配置文件")
+        utils.sync(client.close())
+        return
+
     if not client.init_translator(config['baidu']['appid'], config['baidu']['key']):
         utils.log_error("[error]翻译模块初始化失败, 请检查配置文件")
         utils.sync(client.close())
         return
 
-    bili_conf = config['bilibili']
-    if not client.init_danmaku_sender(bili_conf['room_id'], bili_conf['sessdata'], bili_conf['bili_jct'], bili_conf['buvid3']):
+    if not client.init_danmaku_sender():
         utils.log_error("[error]弹幕模块初始化失败, 请检查配置文件")
         utils.sync(client.close())
         return
