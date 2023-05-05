@@ -93,7 +93,7 @@ class MyClient(discord.Client):
             if text == '':
                 self.__channel_config = {}
             else:
-                self.__channel_config = json.loads(file.read())
+                self.__channel_config = json.loads(text)
 
         return True
 
