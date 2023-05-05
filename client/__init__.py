@@ -44,11 +44,12 @@ class MyClient(discord.Client):
             return
 
         channel = message.channel
+        channel_id = str(channel.id)
 
-        if channel.id not in self.__channel_config or channel.id not in self.__danmaku_senders:
+        if channel_id not in self.__channel_config or channel_id not in self.__danmaku_senders:
             return
 
-        channel_config = self.__channel_config[channel.id]
+        channel_config = self.__channel_config[channel_id]
 
         if 'user' not in channel_config or message.author.name != channel_config['user']:
             return
@@ -64,7 +65,7 @@ class MyClient(discord.Client):
 
             first_flag = True
             for text in texts:
-                result = await self.__danmaku_senders[channel.id].send(text)
+                result = await self.__danmaku_senders[channel_id].send(text)
                 if result:
                     utils.log_info(f'[Successfully]Message {message.content} -> {text}')
                 else:
@@ -104,7 +105,7 @@ class MyClient(discord.Client):
         for channel_id, channel_config in self.__channel_config.items():
             if channel_config.get('status', 0) == 0:
                 continue
-                
+
             _user = channel_config.get('user', '')
             _room_id = channel_config.get('room_id', '')
             _sessdata = channel_config.get('sessdata', '')
