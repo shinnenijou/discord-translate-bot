@@ -174,6 +174,8 @@ class MyClient(discord.Client):
         channel_id = message.channel.id
         if channel_id not in self.__channel_config:
             self.__channel_config[channel_id] = {}
+        elif self.__channel_config[channel_id].get('status', 0) == 1:
+            return
 
         i = 2
         while i < len(params):
