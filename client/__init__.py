@@ -82,7 +82,7 @@ class MyClient(discord.Client):
 
         command = content[1:].split(' ')[0].upper()
         if command in self.__command_handler:
-            self.__command_handler[command](message)
+            await self.__command_handler[command](message)
 
     def init_channel_config(self):
         with open("channel_config.json", "a") as file:
@@ -122,6 +122,8 @@ class MyClient(discord.Client):
         self.__command_handler["SET"] = self.__set_config
         self.__command_handler["START"] = self.__start_channel
         self.__command_handler["STOP"] = self.__stop_channel
+
+        return True
 
     async def __start_channel(self, message):
         if message.channel.id not in self.__channel_config:

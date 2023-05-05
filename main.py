@@ -21,6 +21,11 @@ def main():
         utils.sync(client.close())
         return
 
+    if not client.init_command_handler():
+        utils.log_error("[error]指令处理初始化失败, 请检查配置文件")
+        utils.sync(client.close())
+        return
+
     if not client.init_translator(config['baidu']['appid'], config['baidu']['key']):
         utils.log_error("[error]翻译模块初始化失败, 请检查配置文件")
         utils.sync(client.close())
