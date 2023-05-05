@@ -50,7 +50,7 @@ class MyClient(discord.Client):
 
         channel_config = self.__channel_config[channel.id]
 
-        if 'user' not in channel_config or message.author.name != channel_config.user:
+        if 'user' not in channel_config or message.author.name != channel_config['user']:
             print(message.author.name)
             return
 
