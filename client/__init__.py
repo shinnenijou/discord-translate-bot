@@ -154,7 +154,7 @@ class MyClient(discord.Client):
         del self.__danmaku_senders[message.channel.id]
         await message.channel.send('Successfully stopped.')
 
-    def __set_config(self, message):
+    async def __set_config(self, message):
         params = message.content.strip().split()
         if len(params) < 2:
             return
