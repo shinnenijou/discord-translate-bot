@@ -128,41 +128,43 @@ class MyClient(discord.Client):
         return True
 
     async def __start_channel(self, message):
-        if message.channel.id not in self.__channel_config:
+        channel_id = int(message.channel.id)
+        if channel_id not in self.__channel_config:
             return
 
-        if message.channel.id in self.__danmaku_senders:
+        if channel_id in self.__danmaku_senders:
             return
 
-        channel_config = self.__channel_config[message.channel.id]
+        channel_config = self.__channel_config[channel_id]
         _room_id = channel_config.get('room_id', '')
         _sessdata = channel_config.get('sessdata', '')
         _bili_jct = channel_config.get('bili_jct', '')
         _buvid3 = channel_config.get('buvid3', '')
 
-        self.__danmaku_senders[message.channel.id] = DanmakuSender(_room_id, _sessdata, _bili_jct, _buvid3)
-        if not self.__danmaku_senders[message.channel.id].init():
+        self.__danmaku_senders[channel_id] = DanmakuSender(_room_id, _sessdata, _bili_jct, _buvid3)
+        if not self.__danmaku_senders[channel_id].init():
             await message.channel.send('Failed to start.')
-            del self.__danmaku_senders[message.channel.id]
+            del self.__danmaku_senders[channel_id]
         else:
             await message.channel.send('Successfully started.')
 
-        self.__channel_config[message.channel.id]['status'] = 1
+        self.__channel_config[channel_id]['status'] = 1
         with open("channel_config.json", "w") as file:
             file.write(json.dumps(self.__channel_config))
 
     async def __stop_channel(self, message):
-        if message.channel.id not in self.__channel_config:
+        channel_id = int(message.channel.id)
+        if channel_id not in self.__channel_config:
             return
 
-        if message.channel.id not in self.__danmaku_senders:
+        if channel_id not in self.__danmaku_senders:
             return
 
-        await self.__danmaku_senders[message.channel.id].close()
-        del self.__danmaku_senders[message.channel.id]
+        await self.__danmaku_senders[channel_id].close()
+        del self.__danmaku_senders[channel_id]
         await message.channel.send('Successfully stopped.')
 
-        self.__channel_config[message.channel.id]['status'] = 0
+        self.__channel_config[channel_id]['status'] = 0
         with open("channel_config.json", "w") as file:
             file.write(json.dumps(self.__channel_config))
 
@@ -171,7 +173,7 @@ class MyClient(discord.Client):
         if len(params) < 2:
             return
 
-        channel_id = message.channel.id
+        channel_id = int(message.channel.id)
         if channel_id not in self.__channel_config:
             self.__channel_config[channel_id] = {}
         elif self.__channel_config[channel_id].get('status', 0) == 1:
