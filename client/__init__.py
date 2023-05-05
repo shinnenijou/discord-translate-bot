@@ -103,6 +103,9 @@ class MyClient(discord.Client):
 
     def init_danmaku_sender(self):
         for channel_id, channel_config in self.__channel_config.items():
+            if channel_config.get('status', 0) == 0:
+                continue
+
             _room_id = channel_config.get('room_id', '')
             _sessdata = channel_config.get('sessdata', '')
             _bili_jct = channel_config.get('bili_jct', '')
@@ -145,6 +148,10 @@ class MyClient(discord.Client):
         else:
             await message.channel.send('Successfully started.')
 
+        self.__channel_config[message.channel.id]['status'] = 1
+        with open("channel_config.json", "w") as file:
+            file.write(json.dumps(self.__channel_config))
+
     async def __stop_channel(self, message):
         if message.channel.id not in self.__channel_config:
             return
@@ -155,6 +162,10 @@ class MyClient(discord.Client):
         await self.__danmaku_senders[message.channel.id].close()
         del self.__danmaku_senders[message.channel.id]
         await message.channel.send('Successfully stopped.')
+
+        self.__channel_config[message.channel.id]['status'] = 0
+        with open("channel_config.json", "w") as file:
+            file.write(json.dumps(self.__channel_config))
 
     async def __set_config(self, message):
         params = message.content.strip().split()
@@ -171,5 +182,6 @@ class MyClient(discord.Client):
             self.__channel_config[channel_id][key] = params[i]
             i = i + 2
 
+        self.__channel_config[channel_id]['status'] = 0
         with open("channel_config.json", "w") as file:
             file.write(json.dumps(self.__channel_config))
