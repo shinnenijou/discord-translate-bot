@@ -1,8 +1,6 @@
 import random
 import hashlib
-from time import time
 
-import aiohttp
 import requests
 
 import utils
