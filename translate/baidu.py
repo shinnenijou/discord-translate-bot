@@ -71,7 +71,7 @@ class BaiduTranslator(Translator):
         text = [item['dst'] for item in data['trans_result']]
         return result, text
 
-    async def translate(self, _src: list[str], _from: str = 'ja', _to: str = 'zh') -> list[str]:
+    async def translate(self, _src: list[str], _from: str = 'jp', _to: str = 'zh') -> list[str]:
         q = '\n'.join(_src)
         headers = self._make_headers()
         params = self._make_params(q, _from, _to)
