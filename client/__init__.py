@@ -105,9 +105,11 @@ class MyClient(discord.Client):
         for channel_id, channel_config in self.__channel_config.items():
             if channel_config.get('status', 0) == 0:
                 continue
+
             user = channel_config.get('user', '')
             room_id = channel_config.get('room_id', '')
             api = channel_config.get('api', 'baidu')
+
             if api not in TRANSLATORS_MAP:
                 continue
 
@@ -124,6 +126,10 @@ class MyClient(discord.Client):
             if channel_config.get('status', 0) == 0:
                 continue
 
+            if channel_id not in self.__translators:
+                channel_config['status'] = 0
+                continue
+
             _user = channel_config.get('user', '')
             _room_id = channel_config.get('room_id', '')
             _sessdata = channel_config.get('sessdata', '')
@@ -133,8 +139,12 @@ class MyClient(discord.Client):
             self.__danmaku_senders[channel_id] = DanmakuSender(_room_id, _sessdata, _bili_jct, _buvid3)
             if not self.__danmaku_senders[channel_id].init():
                 del self.__danmaku_senders[channel_id]
+                channel_config['status'] = 0
             else:
                 utils.log_info(f'[Successfully]Danmaku sender for {_user}({_room_id}) started.')
+
+        with open("channel_config.json", "w") as file:
+            file.write(json.dumps(self.__channel_config))
 
         return True
 
