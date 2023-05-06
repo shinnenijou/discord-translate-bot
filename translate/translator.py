@@ -14,7 +14,7 @@ class Translator(ABC):
         CommonResult.REQUEST_ERROR: "本地请求错误"
     }
 
-    def __init__(self, _api:str, _id: str, _key: str, _timeout_sec: int = 1800):
+    def __init__(self, _api: str, _id: str, _key: str, _timeout_sec: int = 1800):
         self.__api = _api
         self.__id = _id
         self.__key = _key
@@ -22,8 +22,32 @@ class Translator(ABC):
         self.__session = None
         self.__timer = 0
 
+    @property
+    def api(self) -> str:
+        return self.__api
+
+    @property
+    def id(self) -> str:
+        return self.__id
+
+    @property
+    def key(self) -> str:
+        return self.__key
+
+    @property
+    def timeout_sec(self) -> int:
+        return self.__timeout_sec
+
+    @property
+    def session(self) -> aiohttp.ClientSession:
+        return self.__session
+
+    @property
+    def timer(self) -> int:
+        return self.__timer
+
     def init(self):
-        if not self.__validate_config():
+        if not self._validate_config():
             print("[error]翻译器配置错误, 请检查翻译器设置")
             return False
 
@@ -34,22 +58,22 @@ class Translator(ABC):
             await self.__session.close()
 
     @abstractmethod
-    def __make_params(self, **kwargs) -> dict:
+    def _make_params(self, **kwargs) -> dict:
         pass
 
     @abstractmethod
-    def __make_headers(self, **kwargs) -> dict:
+    def _make_headers(self, **kwargs) -> dict:
         pass
 
     @abstractmethod
-    def __make_sign(self, **kwargs) -> str:
+    def _make_sign(self, **kwargs) -> str:
         pass
 
     @abstractmethod
-    def __parse_response(self, data:dict) -> (int, list[str]):
+    def _parse_response(self, data:dict) -> (int, list[str]):
         pass
 
-    async def __get(self, url: str, **kwargs) -> (int, dict):
+    async def _get(self, url: str, **kwargs) -> (int, dict):
         cur_time = int(time())
         if cur_time > self.__timer:
             if self.__session is not None:
@@ -78,15 +102,15 @@ class Translator(ABC):
 
         return result, resp
 
-    async def __translate(self, **kwargs) -> (int, list[str]):
-        headers = self.__make_headers(**kwargs)
-        params = self.__make_params(**kwargs)
+    async def _translate(self, **kwargs) -> (int, list[str]):
+        headers = self._make_headers(**kwargs)
+        params = self._make_params(**kwargs)
 
-        result, data = await self.__get(self.__api, headers=headers, params=params)
+        result, data = await self._get(self.__api, headers=headers, params=params)
         if result != self.CommonResult.REQUEST_SUCCESS:
             return result, []
 
-        result, texts = self.__parse_response(data)
+        result, texts = self._parse_response(data)
 
         return result, [item.get('dst', '') for item in data.get('trans_result', [])]
 
@@ -95,5 +119,5 @@ class Translator(ABC):
         pass
 
     @abstractmethod
-    def __validate_config(self) -> bool:
+    def _validate_config(self) -> bool:
         pass

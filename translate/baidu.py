@@ -40,28 +40,32 @@ class BaiduTranslator(Translator):
         EResult.AUTHNOTPASS: '认证未通过或未生效'
     }
 
-    def __make_params(self, _q: str, _from: str, _to: str):
+    def __init__(self, _id: str, _key: str):
+        api = "https://fanyi-api.baidu.com/api/trans/vip/translate"
+        super().__init__(_api=api, _id=_id, _key=_key)
+
+    def _make_params(self, _q: str, _from: str, _to: str):
         salt = str(random.randint(10000000, 99999999))
 
         params = {
             'from': _from,
             'to': _to,
-            'appid': self.__id,
+            'appid': self.id,
             'salt': salt,
-            'sign': self.__make_sign(q, salt),
+            'sign': self._make_sign(_q, salt),
             'q': _q
         }
 
         return params
 
-    def __make_headers(self, **kwargs):
+    def _make_headers(self, **kwargs):
         return {}
 
-    def __make_sign(self, q: str, salt: str):
-        sign = hashlib.md5((self.__id + q + salt + self.__key).encode('utf-8'))
+    def _make_sign(self, q: str, salt: str):
+        sign = hashlib.md5((self.id + q + salt + self.key).encode('utf-8'))
         return sign.hexdigest()
 
-    def __parse_response(self, data:dict) -> (int, list[str]):
+    def _parse_response(self, data:dict) -> (int, list[str]):
         result = int(data.get('error_code', self.EResult.SUCCESS))
         if result != self.EResult.SUCCESS:
             return result, []
@@ -71,19 +75,19 @@ class BaiduTranslator(Translator):
 
     async def translate(self, _src: list[str], _from: str = 'auto', _to: str = 'zh') -> list[str]:
         q = '\n'.join([s for s in _src])
-        result, dst = await self.__translate(_q=q, _from=_from, _to=_to)
+        result, dst = await self._translate(_q=q, _from=_from, _to=_to)
         if result != self.EResult.SUCCESS:
             utils.log_error(f"[error]翻译失败: {self.ErrorString.get(result, '未知错误')}")
             return []
 
         return dst
 
-    def __validate_config(self):
-        params = self.__make_params('', 'auto', 'zh')
-        resp = requests.get(url=self.__api, params=params)
+    def _validate_config(self):
+        params = self._make_params('', 'auto', 'zh')
+        resp = requests.get(url=self.api, params=params)
         if resp.status_code != 200:
             return False
 
-        result, _ = self.__parse_response(resp.json())
+        result, _ = self._parse_response(resp.json())
 
         return result == self.EResult.EMPTYPARAM
