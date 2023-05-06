@@ -4,7 +4,7 @@ import json
 import discord
 
 import utils
-from translate import BaiduTranslator, TencentTranslator
+from translate import TRANSLATORS_MAP
 from bilibili import DanmakuSender, BiliLiveAntiShield, words, rules
 
 
@@ -12,16 +12,18 @@ class MyClient(discord.Client):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.__translator = None
+        self.__translators = {}
         self.__danmaku_senders = {}
         self.__anti_shield = None
         self.__channel_config = {}
         self.__command_handler = {}
+        self.__config = None
 
     async def close(self) -> None:
         await super().close()
-        if self.__translator is not None:
-            await self.__translator.close()
+        if not self.__translators:
+            for translator in self.__translators.values():
+                await translator.close()
 
         if not self.__danmaku_senders:
             for danmaku_sender in self.__danmaku_senders.values():
@@ -58,7 +60,7 @@ class MyClient(discord.Client):
         await asyncio.sleep(send_lag)
 
         content = utils.text_processor.deal(message.content)
-        dst_texts = await self.__translator.translate([content])
+        dst_texts = await self.__translators[channel_id].translate([content])
         for dst_text in dst_texts:
             dst_text = self.__anti_shield.deal(dst_text)
             texts = utils.slice_text(dst_text)
@@ -84,7 +86,9 @@ class MyClient(discord.Client):
         if command in self.__command_handler:
             await self.__command_handler[command](message)
 
-    def init_channel_config(self):
+    def init_channel_config(self, config):
+        self.__config = config
+
         with open("channel_config.json", "a") as file:
             pass
 
@@ -97,9 +101,23 @@ class MyClient(discord.Client):
 
         return True
 
-    def init_translator(self, _appid: str, _key: str):
-        self.__translator = TencentTranslator(_appid, _key)
-        return self.__translator.init()
+    def init_translator(self):
+        for channel_id, channel_config in self.__channel_config.items():
+            if channel_config.get('status', 0) == 0:
+                continue
+            user = channel_config.get('user', '')
+            room_id = channel_config.get('room_id', '')
+            api = channel_config.get('api', 'baidu')
+            if api not in TRANSLATORS_MAP:
+                continue
+
+            self.__translators[channel_id] = TRANSLATORS_MAP[api](self.__config[api]['id'], self.__config[api]['key'])
+            if not self.__translators[channel_id].init():
+                del self.__translators[channel_id]
+            else:
+                utils.log_info(f'[Successfully]Translator for {user}({room_id}) is ready.')
+
+        return True
 
     def init_danmaku_sender(self):
         for channel_id, channel_config in self.__channel_config.items():
@@ -136,6 +154,9 @@ class MyClient(discord.Client):
         if channel_id not in self.__channel_config:
             return
 
+        if channel_id in self.__translators:
+            return
+
         if channel_id in self.__danmaku_senders:
             return
 
@@ -144,13 +165,25 @@ class MyClient(discord.Client):
         _sessdata = channel_config.get('sessdata', '')
         _bili_jct = channel_config.get('bili_jct', '')
         _buvid3 = channel_config.get('buvid3', '')
+        _api = channel_config.get('api', 'baidu')
+
+        if _api not in TRANSLATORS_MAP:
+            await message.channel.send('Invalid API.')
+            return
+
+        self.__translators[channel_id] = TRANSLATORS_MAP[_api](self.__config[_api]['id'], self.__config[_api]['key'])
+        if not self.__translators[channel_id].init():
+            await message.channel.send('Failed to start translator.')
+            del self.__translators[channel_id]
+            return
 
         self.__danmaku_senders[channel_id] = DanmakuSender(_room_id, _sessdata, _bili_jct, _buvid3)
         if not self.__danmaku_senders[channel_id].init():
-            await message.channel.send('Failed to start.')
+            await message.channel.send('Failed to start Danmaku Sender.')
             del self.__danmaku_senders[channel_id]
-        else:
-            await message.channel.send('Successfully started.')
+            return
+
+        await message.channel.send('Successfully started.')
 
         self.__channel_config[channel_id]['status'] = 1
         with open("channel_config.json", "w") as file:
@@ -161,11 +194,18 @@ class MyClient(discord.Client):
         if channel_id not in self.__channel_config:
             return
 
+        if channel_id not in self.__translators:
+            return
+
         if channel_id not in self.__danmaku_senders:
             return
 
+        await self.__translators[channel_id].close()
+        del self.__translators[channel_id]
+
         await self.__danmaku_senders[channel_id].close()
         del self.__danmaku_senders[channel_id]
+
         await message.channel.send('Successfully stopped.')
 
         self.__channel_config[channel_id]['status'] = 0
@@ -190,5 +230,9 @@ class MyClient(discord.Client):
             i = i + 2
 
         self.__channel_config[channel_id]['status'] = 0
+
+        if 'api' not in self.__channel_config[channel_id]:
+            self.__channel_config[channel_id]['api'] = 'baidu'
+
         with open("channel_config.json", "w") as file:
             file.write(json.dumps(self.__channel_config))

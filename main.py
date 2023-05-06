@@ -16,7 +16,7 @@ def main():
     intents.message_content = True
 
     client = MyClient(intents=intents)
-    if not client.init_channel_config():
+    if not client.init_channel_config(config):
         utils.log_error("[error]频道设置初始化失败, 请检查配置文件")
         utils.sync(client.close())
         return
@@ -26,7 +26,7 @@ def main():
         utils.sync(client.close())
         return
 
-    if not client.init_translator(config['tencent']['id'], config['tencent']['key']):
+    if not client.init_translator():
         utils.log_error("[error]翻译模块初始化失败, 请检查配置文件")
         utils.sync(client.close())
         return
