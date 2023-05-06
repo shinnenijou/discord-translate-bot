@@ -1,3 +1,3 @@
-
+from .baidu import BaiduTranslator
 
 
