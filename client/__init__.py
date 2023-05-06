@@ -116,7 +116,7 @@ class MyClient(discord.Client):
             if not self.__danmaku_senders[channel_id].init():
                 del self.__danmaku_senders[channel_id]
             else:
-                utils.log_info(f'[Successfully]Danmaku sender for {_user} started.')
+                utils.log_info(f'[Successfully]Danmaku sender for {_user}({_room_id}) started.')
 
         return True
 
