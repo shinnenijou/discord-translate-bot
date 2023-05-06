@@ -107,9 +107,7 @@ class Translator(ABC):
         if result != self.CommonResult.REQUEST_SUCCESS:
             return result, []
 
-        result, texts = self._parse_response(data)
-
-        return result, [item.get('dst', '') for item in data.get('trans_result', [])]
+        return self._parse_response(data)
 
     @abstractmethod
     async def translate(self, _texts: list[str], _from: str = 'auto', _to: str = 'zh') -> list[str]:

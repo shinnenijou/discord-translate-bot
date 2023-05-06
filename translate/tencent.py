@@ -18,15 +18,15 @@ class TencentTranslator(Translator):
     }
 
     def __init__(self, _id: str, _key: str):
-        #api = "https://tmt.ap-tokyo.tencentcloudapi.com"
-        api = "https://tmt.tencentcloudapi.com"
+        api = "https://tmt.ap-tokyo.tencentcloudapi.com"
+        #api = "https://tmt.tencentcloudapi.com"
         super().__init__(_api=api, _id=_id, _key=_key)
         self.__headers = {
             'Host': 'tmt.tencentcloudapi.com',
             'Content-Type': 'application/x-www-form-urlencoded',
             'X-TC-Action': 'TextTranslate',
             'X-TC-Version': '2018-03-21',
-            'X-TC-Region': 'ap-tokyo',
+            'X-TC-Region': 'ap-shanghai',
         }
 
         self.__service = 'tmt'

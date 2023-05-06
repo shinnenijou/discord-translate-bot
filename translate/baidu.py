@@ -63,7 +63,7 @@ class BaiduTranslator(Translator):
         sign = hashlib.md5((self.id + q + salt + self.key).encode('utf-8'))
         return sign.hexdigest()
 
-    def _parse_response(self, data:dict) -> (int, list[str]):
+    def _parse_response(self, data: dict) -> (int, list[str]):
         result = int(data.get('error_code', self.EResult.SUCCESS))
         if result != self.EResult.SUCCESS:
             return result, []
