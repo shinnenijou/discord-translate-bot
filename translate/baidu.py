@@ -90,4 +90,4 @@ class BaiduTranslator(Translator):
 
         result, _ = self._parse_response(resp.json())
 
-        return result == self.EResult.EMPTYPARAM
+        return result == self.EResult.SUCCESS
