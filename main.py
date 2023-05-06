@@ -26,7 +26,7 @@ def main():
         utils.sync(client.close())
         return
 
-    if not client.init_translator(config['baidu']['appid'], config['baidu']['key']):
+    if not client.init_translator(config['tencent']['id'], config['tencent']['key']):
         utils.log_error("[error]翻译模块初始化失败, 请检查配置文件")
         utils.sync(client.close())
         return

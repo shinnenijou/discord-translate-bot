@@ -71,17 +71,19 @@ class BaiduTranslator(Translator):
         text = [item['dst'] for item in data['trans_result']]
         return result, text
 
-    async def translate(self, _src: list[str], _from: str = 'auto', _to: str = 'zh') -> list[str]:
-        q = '\n'.join([s for s in _src])
-        result, dst = await self._translate(_q=q, _from=_from, _to=_to)
+    async def translate(self, _src: list[str], _from: str = 'ja', _to: str = 'zh') -> list[str]:
+        q = '\n'.join(_src)
+        headers = self._make_headers()
+        params = self._make_params(q, _from, _to)
+        result, dst = await self._translate(headers, params)
         if result != self.EResult.SUCCESS:
-            utils.log_error(f"[error]翻译失败: {self.ErrorString.get(result, '未知错误')}")
+            utils.log_error(f"[error]翻译失败: {self.ErrorString.get(result,  f'未知错误 {result}')}")
             return []
 
         return dst
 
     def _validate_config(self):
-        params = self._make_params('', 'auto', 'zh')
+        params = self._make_params('hello', 'en', 'zh')
         resp = requests.get(url=self.api, params=params)
         if resp.status_code != 200:
             return False

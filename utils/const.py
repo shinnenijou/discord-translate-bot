@@ -3,7 +3,12 @@ DISCORD_FIELDS = {
 }
 
 BAIDU_FIELDS = {
-    'appid': '',
+    'id': '',
+    'key': ''
+}
+
+TENCENT_FIELDS = {
+    'id': '',
     'key': ''
 }
 
@@ -17,6 +22,7 @@ BILIBILI_FIELDS = {
 CONFIG_FIELDS = {
     'discord': DISCORD_FIELDS,
     'baidu': BAIDU_FIELDS,
+    'tencent': TENCENT_FIELDS,
 }
 
 SEND_INTERVAL = 1

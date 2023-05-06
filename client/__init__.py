@@ -4,7 +4,7 @@ import json
 import discord
 
 import utils
-from translate import BaiduTranslator
+from translate import BaiduTranslator, TencentTranslator
 from bilibili import DanmakuSender, BiliLiveAntiShield, words, rules
 
 
@@ -98,7 +98,7 @@ class MyClient(discord.Client):
         return True
 
     def init_translator(self, _appid: str, _key: str):
-        self.__translator = BaiduTranslator(_appid, _key)
+        self.__translator = TencentTranslator(_appid, _key)
         return self.__translator.init()
 
     def init_danmaku_sender(self):

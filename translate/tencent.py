@@ -1,8 +1,8 @@
-import json, hashlib, hmac, asyncio, queue
+import hashlib, hmac
 from time import strftime, gmtime, time
-import random
+from urllib.parse import urlencode
 
-import requests, aiohttp
+import requests
 
 import utils
 from .translator import Translator
@@ -10,212 +10,132 @@ from .translator import Translator
 
 class TencentTranslator(Translator):
     class EResult:
-        SUCCESS = 52000
+        Success = 'OK'
+        LanguageRecognitionErr = 'FailedOperation.LanguageRecognitionErr'
 
     ErrorString = {
 
     }
 
     def __init__(self, _id: str, _key: str):
-        api = "https://tmt.ap-tokyo.tencentcloudapi.com"
+        #api = "https://tmt.ap-tokyo.tencentcloudapi.com"
+        api = "https://tmt.tencentcloudapi.com"
         super().__init__(_api=api, _id=_id, _key=_key)
+        self.__headers = {
+            'Host': 'tmt.tencentcloudapi.com',
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-TC-Action': 'TextTranslate',
+            'X-TC-Version': '2018-03-21',
+            'X-TC-Region': 'ap-tokyo',
+        }
+
+        self.__service = 'tmt'
+        self.__algorithm = 'TC3-HMAC-SHA256'
+
+        http_request_method = 'GET'
+        canonical_uri = '/'
+        canonical_headers = \
+            f"content-type:{self.__headers['Content-Type'].lower()}\n" + \
+            f"host:{self.__headers['Host'].lower()}\n" + \
+            f"x-tc-action:{self.__headers['X-TC-Action'].lower()}\n"
+        signed_headers = 'content-type;host;x-tc-action'
+        hashed_request_payload = self.__hash_sha256('')
+
+        self.__canonical_request_prefix = \
+            http_request_method + '\n' +\
+            canonical_uri + '\n'
+
+        self.__canonical_request_suffix = '\n' +\
+            canonical_headers + '\n' +\
+            signed_headers + '\n' +\
+            hashed_request_payload
 
     def _make_params(self, _q: str, _from: str, _to: str):
-        salt = str(random.randint(10000000, 99999999))
-
         params = {
-            'from': _from,
-            'to': _to,
-            'appid': self.id,
-            'salt': salt,
-            'sign': self._make_sign(_q, salt),
-            'q': _q
+            'SourceText': _q,
+            'Source': _from,
+            'Target': _to,
+            'ProjectId': 0,
         }
 
         return params
 
-    def _make_headers(self, **kwargs):
-        return {}
+    def _make_headers(self, params: dict) -> dict:
+        self.__headers['X-TC-Timestamp'] = str(int(time()))
+        self.__headers['Authorization'] = self._make_sign(self.__headers, params)
 
-    def _make_sign(self, q: str, salt: str):
-        sign = hashlib.md5((self.id + q + salt + self.key).encode('utf-8'))
-        return sign.hexdigest()
+        return self.__headers
+
+    def _make_sign(self, headers: dict, params: dict) -> str:
+        date = strftime('%Y-%m-%d', gmtime(int(headers['X-TC-Timestamp'])))
+
+        canonical_request = self.__canonical_request(params)
+        string_to_sign = self.__sign_string(headers, date, canonical_request)
+
+        secret_date = self.__hmac_sha256(('TC3' + self.key).encode(encoding='utf-8'), date).digest()
+        secret_service = self.__hmac_sha256(secret_date, self.__service).digest()
+        secret_signing = self.__hmac_sha256(secret_service, 'tc3_request').digest()
+
+        authorization = \
+            self.__algorithm + ' ' + \
+            f"Credential={self.id}/{date}/{self.__service}/tc3_request, " + \
+            "SignedHeaders=content-type;host;x-tc-action, " + \
+            f"Signature={self.__hmac_sha256(secret_signing, string_to_sign).hexdigest()}"
+
+        return authorization
 
     def _parse_response(self, data:dict) -> (int, list[str]):
-        result = int(data.get('error_code', self.EResult.SUCCESS))
-        if result != self.EResult.SUCCESS:
+        result = data.get('Response', {}).get('Error', {}).get('Code', self.EResult.Success)
+        if result != self.EResult.Success:
             return result, []
 
-        text = [item['dst'] for item in data['trans_result']]
+        text = data.get('Response', {}).get('TargetText', '').split()
         return result, text
 
-    async def translate(self, _src: list[str], _from: str = 'auto', _to: str = 'zh') -> list[str]:
-        q = '\n'.join([s for s in _src])
-        result, dst = await self._translate(_q=q, _from=_from, _to=_to)
-        if result != self.EResult.SUCCESS:
-            utils.log_error(f"[error]翻译失败: {self.ErrorString.get(result, '未知错误')}")
+    async def translate(self, _src: list[str], _from: str = 'ja', _to: str = 'zh') -> list[str]:
+        q = '\n'.join(_src)
+        params = self._make_params(q, _from, _to)
+        headers = self._make_headers(params)
+        result, dst = await self._translate(headers, params)
+        if result != self.EResult.Success:
+            utils.log_error(f"[error]翻译失败: {self.ErrorString.get(result, f'未知错误 {result}')}")
             return []
 
         return dst
 
     def _validate_config(self):
-        params = self._make_params('', 'auto', 'zh')
-        resp = requests.get(url=self.api, params=params)
+        params = self._make_params('hello', 'en', 'zh')
+        headers = self._make_headers(params)
+        resp = requests.get(url=self.api, headers=headers, params=params)
         if resp.status_code != 200:
             return False
 
         result, _ = self._parse_response(resp.json())
 
-        return result == self.EResult.EMPTYPARAM
+        return result == self.EResult.Success
 
+    def __canonical_request(self, params: dict) -> str:
+        canonical_query_string = urlencode(params)
+        return self.__canonical_request_prefix + canonical_query_string + self.__canonical_request_suffix
 
+    def __sign_string(self, headers: dict, date: str, canonical_query_string: str) -> str:
+        algorithm = self.__algorithm
+        requests_timestamp = headers['X-TC-Timestamp']
+        credential_scope = f"{date}/{self.__service}/tc3_request"
+        hashed_canonical_request = self.__hash_sha256(canonical_query_string)
 
+        string_to_sign = \
+            algorithm + '\n' + \
+            requests_timestamp + '\n' + \
+            credential_scope + '\n' + \
+            hashed_canonical_request
 
-# Request HEADERS
-# Timestamp and authorization will be appended after
-TEXT_TRANSLATE_HEADERS = {
-    'Host': 'tmt.tencentcloudapi.com',
-    'Content-Type': 'application/json; charset=utf-8',
-    'X-TC-Action': 'TextTranslate',
-    'X-TC-Version': '2018-03-21',
-    'X-TC-Region': f'{REGION}',
-    #
-}
+        return string_to_sign
 
+    @staticmethod
+    def __hmac_sha256(key: bytes, msg: str):
+        return hmac.new(key, msg.encode(encoding='utf-8'), hashlib.sha256)
 
-# Sign function
-def _cononical_request(headers: dict, signed_headers: str, payload: str) -> str:
-    ret = \
-        'POST' + '\n' + \
-        '/' + '\n' + \
-        '' + '\n'
-    for key in sorted(headers.keys()):
-        ret += f'{key.lower()}:{headers[key].lower()}' + '\n'
-    ret += '\n' + signed_headers + '\n'
-    ret += hashlib.sha256(payload.encode()).hexdigest().lower()
-    return ret
-
-
-def _string_to_sign(
-        algorithm: str,
-        timestamp: str,
-        date: str,
-        service: str,
-        cononicalRequest: str) -> str:
-    ret = \
-        algorithm + '\n' + \
-        timestamp + '\n' + \
-        f'{date}/{service}/tc3_request' + '\n'
-    ret += hashlib.sha256(cononicalRequest.encode()).hexdigest().lower()
-    return ret
-
-
-def _sign(
-        secret_key: str,
-        date: str,
-        service: str,
-        string_to_sign: str) -> str:
-    def hmac_sha256(key: bytes, msg: str) -> bytes:
-        return hmac.new(key, msg.encode(encoding='utf-8'), hashlib.sha256).digest()
-
-    secret_date = hmac_sha256(('TC3' + secret_key).encode(), date)
-    secret_service = hmac_sha256(secret_date, service)
-    secret_signing = hmac_sha256(secret_service, 'tc3_request')
-    signature = hmac.new(secret_signing, string_to_sign.encode('utf-8'), hashlib.sha256).hexdigest()
-    return signature.lower()
-
-
-def _authorization(
-        algorithm: str,
-        secret_id: str,
-        secret_key: str,
-        timestamp: str,
-        service: str,
-        headers: dict,
-        payload: str):
-    date = strftime('%Y-%m-%d', gmtime(int(timestamp)))
-    cred = date + '/' + service + '/tc3_request'
-    signed_headers = ';'.join(key.lower() for key in sorted(headers.keys()))
-    cononical_request = _cononical_request(headers, signed_headers, payload)
-    string_to_sign = _string_to_sign(algorithm, timestamp, date, service, cononical_request)
-    signature = _sign(secret_key, date, service, string_to_sign)
-    auth = \
-        algorithm + ' ' + \
-        'Credential=' + secret_id + '/' + cred + ', ' + \
-        'SignedHeaders=' + signed_headers + ', ' + \
-        'Signature=' + signature
-    return auth
-
-
-def _make_payload(sourceText: str, source: str, target: str, projectID: int = 0) -> str:
-    return json.dumps({'SourceText': sourceText, 'Source': source,
-                       'Target': target, 'ProjectId': projectID})
-
-
-def _make_headers(payload: str) -> dict:
-    # Append timestamp
-    timestamp = str(int(time()))
-    headers = TEXT_TRANSLATE_HEADERS.copy()
-    headers['X-TC-Timestamp'] = timestamp
-    headers['Authorization'] = _authorization(
-        algorithm=SIGN_ALGORITHM,
-        secret_id=SECRETID,
-        secret_key=SECRETKEY,
-        timestamp=timestamp,
-        service=SERVICE,
-        headers=headers,
-        payload=payload
-    )
-    return headers
-
-
-class TranslateTasker():
-
-    def __init__(self, source: str, target: str, source_texts: list[str]):
-        self.source = source
-        self.target = target
-        self.source_texts = source_texts
-        self.task_queue = queue.Queue()
-        self.target_texts = [""] * len(source_texts)
-        self.session = aiohttp.ClientSession(timeout=TIMEOUT)
-        for i in range(len(source_texts)):
-            self.task_queue.put(i)
-
-    async def post(self):
-        task_id = self.task_queue.get()
-        payload = _make_payload(self.source_texts[task_id], self.source, self.target)
-        headers = _make_headers(payload)
-        async with self.session.post(url=ENDPOINT, data=payload, headers=headers) as resp:
-            try:
-                self.target_texts[task_id] = (await resp.json())['Response']['TargetText']
-            except:
-                logger.error(f'翻译No.{task_id}发生错误, 等待重试')
-                self.task_queue.put(task_id)
-        return self
-
-    async def post_all(self):
-        while self.task_queue.qsize() > LIMIT_PER_SECOND:
-            tasks = []
-            for _ in range(LIMIT_PER_SECOND):
-                tasks.append(asyncio.create_task(self.post()))
-            await asyncio.gather(*tasks)
-            await asyncio.sleep(1)
-        tasks = []
-        for _ in range(self.task_queue.qsize()):
-            tasks.append(asyncio.create_task(self.post()))
-        await asyncio.gather(*tasks)
-        return self
-
-    def get_target_texts(self):
-        return self.target_texts
-
-    async def close(self):
-        await self.session.close()
-
-
-async def translate(source: str, target: str, *source_texts) -> list[str]:
-    tasker = TranslateTasker(source, target, source_texts)
-    await tasker.post_all()
-    target_texts = tasker.get_target_texts()
-    await tasker.close()
-    return target_texts
+    @staticmethod
+    def __hash_sha256(msg: str) -> str:
+        return hashlib.sha256(msg.encode(encoding='utf-8')).hexdigest().lower()

@@ -102,10 +102,7 @@ class Translator(ABC):
 
         return result, resp
 
-    async def _translate(self, **kwargs) -> (int, list[str]):
-        headers = self._make_headers(**kwargs)
-        params = self._make_params(**kwargs)
-
+    async def _translate(self, headers: dict, params: dict) -> (int, list[str]):
         result, data = await self._get(self.__api, headers=headers, params=params)
         if result != self.CommonResult.REQUEST_SUCCESS:
             return result, []
