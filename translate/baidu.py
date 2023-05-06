@@ -78,7 +78,7 @@ class BaiduTranslator(Translator):
 
         return dst
 
-    def validate_config(self):
+    def __validate_config(self):
         params = self.__make_params('', 'auto', 'zh')
         resp = requests.get(url=self.__api, params=params)
         if resp.status_code != 200:
