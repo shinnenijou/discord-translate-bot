@@ -56,7 +56,7 @@ class MyClient(discord.Client):
         if 'user' not in channel_config or message.author.name != channel_config['user']:
             return
 
-        send_lag = channel_config.get('send_lag', utils.SEND_LAG)
+        send_lag = int(channel_config.get('send_lag', utils.SEND_LAG))
         await asyncio.sleep(send_lag)
 
         content = utils.text_processor.deal(message.content)
