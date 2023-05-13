@@ -4,6 +4,7 @@ import json
 import discord
 
 import utils
+from utils import ECommandResult
 from translate import TRANSLATORS_MAP
 from bilibili import DanmakuSender, BiliLiveAntiShield, words, rules
 
@@ -42,7 +43,9 @@ class MyClient(discord.Client):
             return
 
         if content[0] == '!':
-            await self.__handle_command(content, message)
+            result = await self.__handle_command(content, message)
+            if result in utils.CommandResultString:
+                await message.channel.send(utils.CommandResultString[result])
             return
 
         channel = message.channel
@@ -80,11 +83,13 @@ class MyClient(discord.Client):
 
     async def __handle_command(self, content, message):
         if len(content) < 2:
-            return
+            return ECommandResult.UnknownCommand
 
         command = content[1:].split(' ')[0].upper()
         if command in self.__command_handler:
-            await self.__command_handler[command](message)
+            return await self.__command_handler[command](message)
+
+        return ECommandResult.UnknownCommand
 
     def init_channel_config(self, config):
         self.__config = config
@@ -162,13 +167,10 @@ class MyClient(discord.Client):
     async def __start_channel(self, message):
         channel_id = str(message.channel.id)
         if channel_id not in self.__channel_config:
-            return
+            return ECommandResult.NoConfig
 
-        if channel_id in self.__translators:
-            return
-
-        if channel_id in self.__danmaku_senders:
-            return
+        if self.__channel_config[channel_id].get('status', 0) == 1:
+            return ECommandResult.SuccessStart
 
         channel_config = self.__channel_config[channel_id]
         _room_id = channel_config.get('room_id', '')
@@ -178,37 +180,35 @@ class MyClient(discord.Client):
         _api = channel_config.get('api', 'baidu')
 
         if _api not in TRANSLATORS_MAP:
-            await message.channel.send('Invalid API.')
-            return
+            return ECommandResult.InvalidAPI
 
         self.__translators[channel_id] = TRANSLATORS_MAP[_api](self.__config[_api]['id'], self.__config[_api]['key'])
         if not self.__translators[channel_id].init():
-            await message.channel.send('Failed to start translator.')
             del self.__translators[channel_id]
-            return
+            return ECommandResult.FailedStartTranslator
 
         self.__danmaku_senders[channel_id] = DanmakuSender(_room_id, _sessdata, _bili_jct, _buvid3)
         if not self.__danmaku_senders[channel_id].init():
-            await message.channel.send('Failed to start Danmaku Sender.')
             del self.__danmaku_senders[channel_id]
-            return
-
-        await message.channel.send('Successfully started.')
+            return ECommandResult.FailedStartDanmaku
 
         self.__channel_config[channel_id]['status'] = 1
         with open("channel_config.json", "w") as file:
             file.write(json.dumps(self.__channel_config))
 
+        await message.channel.send(
+            f"API: {_api}, LiveRoom: {_room_id}, Sender: {self.__danmaku_senders[channel_id].get_user_info()}"
+        )
+
+        return ECommandResult.SuccessStart
+
     async def __stop_channel(self, message):
         channel_id = str(message.channel.id)
         if channel_id not in self.__channel_config:
-            return
+            return ECommandResult.NoConfig
 
-        if channel_id not in self.__translators:
-            return
-
-        if channel_id not in self.__danmaku_senders:
-            return
+        if self.__channel_config[channel_id].get('status', 0) == 0:
+            return ECommandResult.SuccessStop
 
         await self.__translators[channel_id].close()
         del self.__translators[channel_id]
@@ -216,22 +216,22 @@ class MyClient(discord.Client):
         await self.__danmaku_senders[channel_id].close()
         del self.__danmaku_senders[channel_id]
 
-        await message.channel.send('Successfully stopped.')
-
         self.__channel_config[channel_id]['status'] = 0
         with open("channel_config.json", "w") as file:
             file.write(json.dumps(self.__channel_config))
 
+        return ECommandResult.SuccessStop
+
     async def __set_config(self, message):
         params = message.content.strip().split()
         if len(params) < 2:
-            return
+            return ECommandResult.InvalidParams
 
         channel_id = str(message.channel.id)
         if channel_id not in self.__channel_config:
             self.__channel_config[channel_id] = {}
         elif self.__channel_config[channel_id].get('status', 0) == 1:
-            return
+            return ECommandResult.ChannelRunning
 
         i = 2
         while i < len(params):
@@ -246,3 +246,5 @@ class MyClient(discord.Client):
 
         with open("channel_config.json", "w") as file:
             file.write(json.dumps(self.__channel_config))
+
+        return ECommandResult.SuccessSet

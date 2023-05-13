@@ -48,7 +48,6 @@ class Translator(ABC):
 
     def init(self):
         if not self._validate_config():
-            print("[error]翻译器配置错误, 请检查翻译器设置")
             return False
 
         return True
