@@ -6,6 +6,7 @@ import aiohttp
 import requests
 
 import utils
+from utils import ECommandResult
 from .enums import *
 
 
@@ -36,13 +37,13 @@ class DanmakuSender:
     def init(self):
         if self.get_user_info() == '':
             utils.log_error("获取用户信息失败, 请检查配置文件或网络状态")
-            return False
+            return ECommandResult.GetUserInfoError
 
         if self.get_danmaku_config() == (None, None):
             utils.log_error("获取弹幕配置失败, 请检查配置文件")
-            return False
+            return ECommandResult.GetDanmakuConfigError
 
-        return True
+        return ECommandResult.Success
 
     async def close(self):
         if self.__session is not None:

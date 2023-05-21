@@ -1,5 +1,6 @@
 from configparser import RawConfigParser
 import asyncio
+from time import time
 
 from .const import *
 
@@ -10,6 +11,10 @@ def log_error(msg: str):
 
 def log_info(msg: str):
     print("[INFO]" + msg)
+
+
+def get_ms_time():
+    return int(time() * 1000)
 
 
 def check_config(config: RawConfigParser) -> bool:
@@ -59,6 +64,8 @@ class TextProcessor:
             text = text.replace(_old, _new)
 
         return text
+
+
 
 
 text_processor = TextProcessor()

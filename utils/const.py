@@ -30,8 +30,8 @@ SEND_LAG = 3
 
 
 class ECommandResult:
-    SuccessStart = 0
-    SuccessStop = 1
+    Success = 0
+    Failed = 1
     NoConfig = 2
     InvalidParams = 3
     InvalidAPI = 4
@@ -40,6 +40,10 @@ class ECommandResult:
     ChannelRunning = 7
     SuccessSet = 8
     UnknownCommand = 9
+    SuccessStart = 10
+    SuccessStop = 11
+    GetUserInfoError = 12
+    GetDanmakuConfigError = 13
 
 
 CommandResultString = {
@@ -52,5 +56,7 @@ CommandResultString = {
     ECommandResult.FailedStartTranslator: "Failed to start Translator. Please check API id and key again.",
     ECommandResult.ChannelRunning: "Cannot set config while running. Please stop firstly.",
     ECommandResult.SuccessSet: "Successfully set config.",
-    ECommandResult.UnknownCommand: "Unknown Command."
+    ECommandResult.UnknownCommand: "Unknown Command.",
+    ECommandResult.GetUserInfoError: "Failed to get user info. Please check bilibili account cookies again.",
+    ECommandResult.GetDanmakuConfigError: "Failed to get danmaku config. Please check bilibili room_id again."
 }

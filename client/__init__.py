@@ -34,6 +34,8 @@ class MyClient(discord.Client):
         pass
 
     async def on_message(self, message):
+        elapse = utils.get_ms_time()
+
         if message.author == self.user:
             return
 
@@ -59,11 +61,14 @@ class MyClient(discord.Client):
         if 'user' not in channel_config or message.author.name != channel_config['user']:
             return
 
-        send_lag = int(channel_config.get('send_lag', utils.SEND_LAG))
-        await asyncio.sleep(send_lag)
-
         content = utils.text_processor.deal(message.content)
         dst_texts = await self.__translators[channel_id].translate([content])
+
+        # Wait for lag
+        send_lag = int(channel_config.get('send_lag', utils.SEND_LAG))
+        elapse = (utils.get_ms_time() - elapse)/1000
+        await asyncio.sleep(send_lag - elapse)
+
         for dst_text in dst_texts:
             dst_text = self.__anti_shield.deal(dst_text)
             texts = utils.slice_text(dst_text)
@@ -142,7 +147,7 @@ class MyClient(discord.Client):
             _buvid3 = channel_config.get('buvid3', '')
 
             self.__danmaku_senders[channel_id] = DanmakuSender(_room_id, _sessdata, _bili_jct, _buvid3)
-            if not self.__danmaku_senders[channel_id].init():
+            if self.__danmaku_senders[channel_id].init() != ECommandResult.Success:
                 del self.__danmaku_senders[channel_id]
                 channel_config['status'] = 0
             else:
@@ -188,9 +193,10 @@ class MyClient(discord.Client):
             return ECommandResult.FailedStartTranslator
 
         self.__danmaku_senders[channel_id] = DanmakuSender(_room_id, _sessdata, _bili_jct, _buvid3)
-        if not self.__danmaku_senders[channel_id].init():
+        result = self.__danmaku_senders[channel_id].init()
+        if result != ECommandResult.Success :
             del self.__danmaku_senders[channel_id]
-            return ECommandResult.FailedStartDanmaku
+            return result
 
         self.__channel_config[channel_id]['status'] = 1
         with open("channel_config.json", "w") as file:
@@ -248,3 +254,4 @@ class MyClient(discord.Client):
             file.write(json.dumps(self.__channel_config))
 
         return ECommandResult.SuccessSet
+    
