@@ -64,6 +64,12 @@ class MyClient(discord.Client):
         content = utils.text_processor.deal(message.content)
         dst_texts = await self.__translators[channel_id].translate([content])
 
+        for i in range(len(dst_texts)):
+            if dst_texts[i][-1] == '。':
+                dst_texts[i] = dst_texts[i][:-1]
+
+            dst_texts[i] = self.__anti_shield.deal(dst_texts[i])
+
         # Wait for lag
         send_lag = int(channel_config.get('send_lag', utils.SEND_LAG))
         elapse = (utils.get_ms_time() - elapse)/1000
@@ -73,7 +79,6 @@ class MyClient(discord.Client):
             if len(dst_text) <= 2:
                 continue
 
-            dst_text = self.__anti_shield.deal(dst_text)
             texts = utils.slice_text(dst_text)
 
             first_flag = True
