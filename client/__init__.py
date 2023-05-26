@@ -75,6 +75,9 @@ class MyClient(discord.Client):
 
             first_flag = True
             for text in texts:
+                if len(text) <= 2:
+                    continue
+
                 result = await self.__danmaku_senders[channel_id].send(text)
                 if result:
                     utils.log_info(f'[Successfully]Message {message.content} -> {text}')
