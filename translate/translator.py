@@ -1,7 +1,11 @@
 from abc import ABC, abstractmethod
 from time import time
+from asyncio import sleep, Lock
+from queue import Queue
 
 import aiohttp
+
+import utils
 
 
 class Translator(ABC):
@@ -14,13 +18,25 @@ class Translator(ABC):
         CommonResult.REQUEST_ERROR: "本地请求错误"
     }
 
-    def __init__(self, _api: str, _id: str, _key: str, _timeout_sec: int = 1800):
+    class RateLimitPeriod:
+        QPS = 1
+        QPM = 60
+
+    def __init__(self, _api: str, _id: str, _key: str,
+                 rate_limit_type: int,
+                 rate_limit:int,
+                 _timeout_sec: int = 1800):
         self.__api = _api
         self.__id = _id
         self.__key = _key
         self.__timeout_sec = _timeout_sec
         self.__session = None
         self.__timer = 0
+
+        # rate limit control
+        self.__query_queue = Queue(maxsize=rate_limit)
+        self.__query_period = rate_limit_type * 1000 + 200
+        self.__query_lock = Lock()
 
     @property
     def api(self) -> str:
@@ -85,6 +101,21 @@ class Translator(ABC):
 
         result = self.CommonResult.REQUEST_ERROR
         resp = {}
+
+        # rate limit control
+        await self.__query_lock.acquire()
+
+        while self.__query_queue.full():
+            elapse = utils.get_ms_time() - self.__query_queue.get()
+
+            if elapse <= self.__query_period:
+                utils.logger.log_info("请求频率超过限制...等待重置计时...")
+                wait_time = self.__query_period - elapse
+                await sleep(wait_time / 1000)
+
+        self.__query_lock.release()
+        self.__query_queue.put(utils.get_ms_time())
+
         try:
             async with self.__session.get(url, headers=_headers, params=_params) as resp:
                 if resp.status == 200:

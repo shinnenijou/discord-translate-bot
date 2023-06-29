@@ -38,9 +38,24 @@ class BaiduTranslator(Translator):
         EResult.AUTHNOTPASS: '认证未通过或未生效'
     }
 
+    instance = {}
+
+    def __new__(cls, *args, **kwargs):
+        if len(args) > 0:
+            _id = args[0]
+        else:
+            _id = kwargs.get('_id', '')
+
+        if _id not in cls.instance:
+            cls.instance[_id] = object.__new__(cls)
+
+        return cls.instance[_id]
+
     def __init__(self, _id: str, _key: str):
         api = "https://fanyi-api.baidu.com/api/trans/vip/translate"
-        super().__init__(_api=api, _id=_id, _key=_key)
+        super().__init__(_api=api, _id=_id, _key=_key,
+                         rate_limit_type=Translator.RateLimitPeriod.QPS,
+                         rate_limit=10)
 
     def _make_params(self, _q: str, _from: str, _to: str):
         salt = str(random.randint(10000000, 99999999))
