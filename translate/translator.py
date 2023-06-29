@@ -88,6 +88,22 @@ class Translator(ABC):
     def _parse_response(self, data:dict) -> (int, list[str]):
         pass
 
+    # rate limit control
+    async def wait_for_queue(self):
+
+        await self.__query_lock.acquire()
+
+        while self.__query_queue.full():
+            elapse = utils.get_ms_time() - self.__query_queue.get()
+
+            if elapse <= self.__query_period:
+                utils.logger.log_info("请求频率超过限制...等待重置计时...")
+                wait_time = self.__query_period - elapse
+                await sleep(wait_time / 1000)
+
+        self.__query_lock.release()
+        self.__query_queue.put(utils.get_ms_time())
+
     async def _get(self, url: str, **kwargs) -> (int, dict):
         cur_time = int(time())
         if cur_time > self.__timer:
@@ -102,19 +118,7 @@ class Translator(ABC):
         result = self.CommonResult.REQUEST_ERROR
         resp = {}
 
-        # rate limit control
-        await self.__query_lock.acquire()
-
-        while self.__query_queue.full():
-            elapse = utils.get_ms_time() - self.__query_queue.get()
-
-            if elapse <= self.__query_period:
-                utils.logger.log_info("请求频率超过限制...等待重置计时...")
-                wait_time = self.__query_period - elapse
-                await sleep(wait_time / 1000)
-
-        self.__query_lock.release()
-        self.__query_queue.put(utils.get_ms_time())
+        await self.wait_for_queue()
 
         try:
             async with self.__session.get(url, headers=_headers, params=_params) as resp:
