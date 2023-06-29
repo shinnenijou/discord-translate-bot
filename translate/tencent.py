@@ -31,9 +31,7 @@ class TencentTranslator(Translator):
         return cls.instance[_id]
 
     def __init__(self, _id: str, _key: str):
-        #api = "https://tmt.ap-tokyo.tencentcloudapi.com"
-        api = "https://tmt.ap-beijing.tencentcloudapi.com"
-        #api = "https://tmt.tencentcloudapi.com"
+        api = "https://tmt.ap-tokyo.tencentcloudapi.com"
         super().__init__(_api=api, _id=_id, _key=_key,
                          rate_limit_type=Translator.RateLimitPeriod.QPS,
                          rate_limit=5)
