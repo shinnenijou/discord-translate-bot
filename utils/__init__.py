@@ -1,20 +1,40 @@
 from configparser import RawConfigParser
 import asyncio
-from time import time
+import time
+import os
 
 from .const import *
 
 
-def log_error(msg: str):
-    print("[ERROR]" + msg)
+class Logger:
+    def __init__(self):
+        self.__log_dir = None
 
+    def init(self, dir_path):
+        if not os.path.exists(dir_path) or not os.path.isdir(dir_path):
+            os.mkdir(dir_path)
 
-def log_info(msg: str):
-    print("[INFO]" + msg)
+        self.__log_dir = dir_path
+
+    def log_error(self, msg: str):
+        with open(os.path.join(self.__log_dir, f"{get_date()}.log"), "a") as file:
+            file.write(f"[{get_hms_time()}][error]{msg}\n")
+
+    def log_info(self,msg: str):
+        with open(os.path.join(self.__log_dir, f"{get_date()}.log"), "a") as file:
+            file.write(f"[{get_hms_time()}][info]{msg}\n")
 
 
 def get_ms_time():
-    return int(time() * 1000)
+    return int(time.time() * 1000)
+
+
+def get_date():
+    return time.strftime("%Y-%m-%d", time.gmtime())
+
+
+def get_hms_time():
+    return time.strftime("%H-%M-%S", time.gmtime())
 
 
 def check_config(config: RawConfigParser) -> bool:
@@ -66,6 +86,5 @@ class TextProcessor:
         return text
 
 
-
-
 text_processor = TextProcessor()
+logger = Logger()

@@ -85,9 +85,9 @@ class MyClient(discord.Client):
             for text in texts:
                 result = await self.__danmaku_senders[channel_id].send(text)
                 if result:
-                    utils.log_info(f'[Successfully]Message {message.content} -> {text}')
+                    utils.logger.log_info(f'[Successfully]Message {message.content} -> {text}')
                 else:
-                    utils.log_error(f'[Failed]Message {message.content} -> {text}')
+                    utils.logger.log_error(f'[Failed]Message {message.content} -> {text}')
 
                 if first_flag:
                     first_flag = False
@@ -135,7 +135,7 @@ class MyClient(discord.Client):
             if not self.__translators[channel_id].init():
                 del self.__translators[channel_id]
             else:
-                utils.log_info(f'[Successfully]Translator for {user}({room_id}) is ready.')
+                utils.logger.log_info(f'[Successfully]Translator for {user}({room_id}) is ready.')
 
         return True
 
@@ -159,7 +159,7 @@ class MyClient(discord.Client):
                 del self.__danmaku_senders[channel_id]
                 channel_config['status'] = 0
             else:
-                utils.log_info(f'[Successfully]Danmaku sender for {_user}({_room_id}) started.')
+                utils.logger.log_info(f'[Successfully]Danmaku sender for {_user}({_room_id}) started.')
 
         with open("channel_config.json", "w") as file:
             file.write(json.dumps(self.__channel_config))

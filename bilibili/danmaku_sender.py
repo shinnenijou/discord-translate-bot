@@ -36,11 +36,11 @@ class DanmakuSender:
 
     def init(self):
         if self.get_user_info() == '':
-            utils.log_error("获取用户信息失败, 请检查配置文件或网络状态")
+            utils.logger.log_error("获取用户信息失败, 请检查配置文件或网络状态")
             return ECommandResult.GetUserInfoError
 
         if self.get_danmaku_config() == (None, None):
-            utils.log_error("获取弹幕配置失败, 请检查配置文件")
+            utils.logger.log_error("获取弹幕配置失败, 请检查配置文件")
             return ECommandResult.GetDanmakuConfigError
 
         return ECommandResult.Success
@@ -159,9 +159,9 @@ class DanmakuSender:
             return True
 
         if result in ErrorString:
-            utils.log_error(f"消息{msg}： {ErrorString[result]}")
+            utils.logger.log_error(f"消息{msg}： {ErrorString[result]}")
         else:
-            utils.log_error(f"消息{msg}：未知错误： {result}")
+            utils.logger.log_error(f"消息{msg}：未知错误： {result}")
 
         return False
 
