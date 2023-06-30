@@ -76,8 +76,11 @@ class GPTTranslator(Translator):
 
         choices = resp.get('choices')
         for choice in choices:
-            message = choice.get('message')
-            contents.append(message.get('content'))
+            content:str = choice.get('message').get('content')
+            if content.replace('.', '').replace(',', '').isalpha():
+                continue
+
+            contents.append(content)
 
         total_token = resp.get('usage', {}).get('total_tokens', 0)
         utils.logger.log_info(f'[GPT]Translate: {_src[0]} -> {contents[0]}, token: {total_token}')
