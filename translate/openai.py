@@ -30,7 +30,7 @@ class GPTTranslator(Translator):
         api = ""
         super().__init__(_api=api, _id=_id, _key=_key,
                          rate_limit_type=Translator.RateLimitPeriod.QPM,
-                         rate_limit=3)
+                         rate_limit=3500)
 
     def _make_params(self, _q: str, _from: str, _to: str):
         return
