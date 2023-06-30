@@ -45,23 +45,29 @@ class GPTTranslator(Translator):
         return
 
     async def translate(self, _src: list[str], _from: str = 'jp', _to: str = 'zh') -> list[str]:
+        contents = []
         src_text = "\n".join(_src)
 
-        openai.api_key = self.key
-        resp = openai.ChatCompletion.create(
-            model=self.id,
-            messages=[
-                {"role": "user", "content": f"Translate this into Chinese: \n\n{src_text}"}
-            ]
-        )
+        await self.wait_for_queue()
 
-        contents = []
-        result = self.EResult.Error
+        # chat completion choices to generate default to 1, thus we have at least
+        try:
+            openai.api_key = self.key
+
+            resp = await openai.ChatCompletion.acreate(
+                model=self.id,
+                messages=[
+                    {"role": "user", "content": f"Translate this into Chinese: \n\n{src_text}"}
+                ]
+            )
+        except Exception as e:
+            utils.logger.log_error(f"[Failed]Translate: {src_text}, due to {e})")
+            return []
+
         choices = resp.get('choices')
         for choice in choices:
             message = choice.get('message')
             contents.append(message.get('content'))
-            result = self.EResult.Success
 
         total_token = resp.get('usage', {}).get('total_tokens', 0)
         utils.logger.log_info(f'[GPT]Translate: {_src[0]} -> {contents[0]}, token: {total_token}')
