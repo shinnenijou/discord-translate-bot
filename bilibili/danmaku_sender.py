@@ -152,7 +152,6 @@ class DanmakuSender:
         :param msg: 待发送的弹幕内容
         :return: 服务器返回的响应体
         """
-
         await self.__send_queue.put(msg)
         await self.__send_lock.acquire()
         msg = await self.__send_queue.get()
@@ -168,12 +167,12 @@ class DanmakuSender:
                 else:
                     utils.logger.log_error(f"消息{msg}：未知错误： {result}")
 
+            await asyncio.sleep(utils.SEND_INTERVAL)
             self.__send_lock.release()
 
             return False
 
         await asyncio.sleep(utils.SEND_INTERVAL)
-
         self.__send_lock.release()
 
         return True
