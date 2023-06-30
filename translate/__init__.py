@@ -5,5 +5,5 @@ from .openai import GPTTranslator
 TRANSLATORS_MAP = {
     'baidu': BaiduTranslator,
     'tencent': TencentTranslator,
-    'gpt3.5': GPTTranslator
+    'openai': GPTTranslator
 }

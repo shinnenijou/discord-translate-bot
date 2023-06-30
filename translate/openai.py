@@ -61,7 +61,7 @@ class GPTTranslator(Translator):
                 ]
             )
         except Exception as e:
-            utils.logger.log_error(f"[Failed]Translate: {src_text}, due to {e})")
+            utils.logger.log_error(f"[GPT]Translate Failed: {src_text}, due to {e})")
             return []
 
         choices = resp.get('choices')
@@ -75,15 +75,23 @@ class GPTTranslator(Translator):
         return contents
 
     def _validate_config(self):
-        openai.api_key = self.key
-        resp = openai.ChatCompletion.create(
-            model=self.api,
-            messages=[
-                {"role": "user", "content": f"Hello"}
-            ]
-        )
+        try:
+            openai.api_key = self.key
 
-        result, dst = self._parse_response(resp)
-        print(dst)
+            resp = openai.ChatCompletion.create(
+                model=self.id,
+                messages=[
+                    {"role": "user", "content": "Hello"}
+                ]
+            )
+        except Exception as e:
+            utils.logger.log_error(f"[GPT]Validate Failed: {e})")
+            return False
 
-        return result == self.EResult.Success
+        choice = resp.get('choices')[0]
+        content = choice.get('message', {}).get('content')
+
+        total_token = resp.get('usage', {}).get('total_tokens', 0)
+        utils.logger.log_info(f'[GPT]Validate: Hello -> {content}, token: {total_token}')
+
+        return True
