@@ -16,15 +16,15 @@ class GPTTranslator(Translator):
     instance = {}
 
     def __new__(cls, *args, **kwargs):
-        if len(args) > 0:
-            _id = args[0]
+        if len(args) > 1:
+            _key = args[1]
         else:
-            _id = kwargs.get('_id', '')
+            _key = kwargs.get('_key', '')
 
-        if _id not in cls.instance:
-            cls.instance[_id] = object.__new__(cls)
+        if _key not in cls.instance:
+            cls.instance[_key] = object.__new__(cls)
 
-        return cls.instance[_id]
+        return cls.instance[_key]
 
     def __init__(self, _id: str, _key: str):
         api = ""
