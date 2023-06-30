@@ -1,5 +1,7 @@
 import openai
 
+openai.proxy = {'http': 'http://127.0.0.1:7890', 'https': 'http://127.0.0.1:7890'}
+
 import utils
 from .translator import Translator
 
@@ -76,8 +78,8 @@ class GPTTranslator(Translator):
 
         choices = resp.get('choices')
         for choice in choices:
-            content:str = choice.get('message').get('content')
-            if content.replace('.', '').replace(',', '').isalpha():
+            content = choice.get('message').get('content')
+            if content.isascii():
                 continue
 
             contents.append(content)
