@@ -86,14 +86,8 @@ class MyClient(discord.Client):
 
             texts = utils.slice_text(dst_text)
 
-            first_flag = True
             for text in texts:
-                result = await self.__danmaku_senders[channel_id].send(text)
-
-                if first_flag:
-                    first_flag = False
-                else:
-                    await asyncio.sleep(utils.SEND_INTERVAL)
+                await self.__danmaku_senders[channel_id].send(text)
 
     async def __handle_command(self, content, message):
         if len(content) < 2:

@@ -32,6 +32,10 @@ class DanmakuSender:
         self.__color = EDanmakuColor.White
         self.__name = ''
 
+        # send queue control
+        self.__send_queue = asyncio.Queue(maxsize=0)
+        self.__send_lock = asyncio.Lock()
+
         self.__timer = 0
 
     def init(self):
@@ -148,6 +152,11 @@ class DanmakuSender:
         :param msg: 待发送的弹幕内容
         :return: 服务器返回的响应体
         """
+
+        await self.__send_queue.put(msg)
+        await self.__send_lock.acquire()
+        msg = await self.__send_queue.get()
+
         result, resp = await self.__send(msg)
         if result == ESendResult.Success:
             return True
@@ -155,15 +164,19 @@ class DanmakuSender:
         # Retry
         await asyncio.sleep(utils.SEND_INTERVAL)
         result, resp = await self.__send(msg)
-        if result == ESendResult.Success:
-            return True
+        if result != ESendResult.Success:
+            if result in ErrorString:
+                utils.logger.log_error(f"消息{msg}： {ErrorString[result]}")
+            else:
+                utils.logger.log_error(f"消息{msg}：未知错误： {result}")
 
-        if result in ErrorString:
-            utils.logger.log_error(f"消息{msg}： {ErrorString[result]}")
-        else:
-            utils.logger.log_error(f"消息{msg}：未知错误： {result}")
+            return False
 
-        return False
+        await asyncio.sleep(utils.SEND_INTERVAL)
+
+        self.__send_lock.release()
+
+        return True
 
     def get_name(self):
         return self.__name
