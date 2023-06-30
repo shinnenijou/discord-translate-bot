@@ -1,4 +1,4 @@
-import os.path
+import os
 
 import discord
 from configparser import RawConfigParser
@@ -20,7 +20,11 @@ def main():
     intents = discord.Intents.default()
     intents.message_content = True
 
-    client = MyClient(intents=intents)
+    if os.getenv('GLOBAL_PROXY', ''):
+        client = MyClient(intents=intents, proxy=os.getenv('GLOBAL_PROXY'))
+    else:
+        client = MyClient(intents=intents)
+
     if not client.init_channel_config(config):
         utils.logger.log_error("频道设置初始化失败, 请检查配置文件")
         utils.sync(client.close())

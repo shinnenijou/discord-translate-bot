@@ -1,7 +1,16 @@
+import os
+
 import openai
 
 import utils
 from .translator import Translator
+
+
+if os.getenv('GLOBAL_PROXY', ''):
+    openai.proxy = {
+        'http': os.getenv('PROXY'),
+        'https': os.getenv('PROXY')
+    }
 
 
 class GPTTranslator(Translator):
