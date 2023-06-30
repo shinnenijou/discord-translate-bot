@@ -13,6 +13,12 @@ class GPTTranslator(Translator):
 
     }
 
+    Language = {
+        'zh': "Simplified Chinese",
+        'jp': "Japanese",
+        'en': "English"
+    }
+
     instance = {}
 
     def __new__(cls, *args, **kwargs):
@@ -45,6 +51,10 @@ class GPTTranslator(Translator):
         return
 
     async def translate(self, _src: list[str], _from: str = 'jp', _to: str = 'zh') -> list[str]:
+        if _from not in self.Language or _to not in self.Language:
+            utils.logger.log_error(f"[GPT]Translate Failed: Language not support, {_from}->{_to})")
+            return []
+
         contents = []
         src_text = "\n".join(_src)
 
@@ -57,7 +67,7 @@ class GPTTranslator(Translator):
             resp = await openai.ChatCompletion.acreate(
                 model=self.id,
                 messages=[
-                    {"role": "user", "content": f"Translate this into Chinese: \n\n{src_text}"}
+                    {"role": "user", "content": f"Translate this into {self.Language[_to]}: \n\n{src_text}"}
                 ]
             )
         except Exception as e:

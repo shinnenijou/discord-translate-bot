@@ -144,7 +144,7 @@ class Translator(ABC):
         return self._parse_response(data)
 
     @abstractmethod
-    async def translate(self, _texts: list[str], _from: str = 'auto', _to: str = 'zh') -> list[str]:
+    async def translate(self, _texts: list[str], _from: str, _to: str) -> list[str]:
         pass
 
     @abstractmethod

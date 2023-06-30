@@ -61,8 +61,12 @@ class MyClient(discord.Client):
         if 'user' not in channel_config or message.author.name != channel_config['user']:
             return
 
+        language = channel_config.get('language', "jp->zh").split('->')
+        if len(language) < 2:
+            return
+
         content = utils.text_processor.deal(message.content)
-        dst_texts = await self.__translators[channel_id].translate([content])
+        dst_texts = await self.__translators[channel_id].translate([content], language[0], language[1])
 
         for i in range(len(dst_texts)):
             if dst_texts[i][-1] == '。':
@@ -255,6 +259,9 @@ class MyClient(discord.Client):
 
         if 'api' not in self.__channel_config[channel_id]:
             self.__channel_config[channel_id]['api'] = 'baidu'
+
+        if 'language' not in self.__channel_config[channel_id]:
+            self.__channel_config[channel_id]['language'] = 'jp->zh'
 
         with open("channel_config.json", "w") as file:
             file.write(json.dumps(self.__channel_config))
