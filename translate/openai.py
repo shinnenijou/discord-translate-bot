@@ -65,7 +65,7 @@ class GPTTranslator(Translator):
             return []
 
         contents = []
-        src_text = "\n".join(_src)
+        src_text = "\n".join(_src).strip()
 
         await self.wait_for_queue()
 
@@ -86,7 +86,7 @@ class GPTTranslator(Translator):
         choices = resp.get('choices')
         for choice in choices:
             content = choice.get('message').get('content')
-            if content.isascii():
+            if content.replace(src_text, '').isascii():
                 continue
 
             contents.append(content)
