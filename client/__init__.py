@@ -66,6 +66,9 @@ class MyClient(discord.Client):
             return
 
         content = utils.text_processor.deal(message.content)
+        if not content:
+            return
+
         dst_texts = await self.__translators[channel_id].translate([content], language[0], language[1])
 
         for i in range(len(dst_texts)):

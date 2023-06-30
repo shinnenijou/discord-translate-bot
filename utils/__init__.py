@@ -70,17 +70,41 @@ def sync(coroutine):
 
 class TextProcessor:
     def __init__(self):
-        self.__words = {}
+        self.__replace_words = {}
+        self.__punctuation = {}
+        self.__no_meaning_punctuation = {}
+        self.__katakana = {}
+        self.__hiragana = {}
+        self.__no_meaning_words = {}
         self.load_words()
 
     def load_words(self):
-        self.__words = {}
-        from dictionary import REPLACE_MAP
+        self.__replace_words = {}
+        self.__punctuation = {}
+
+        from dictionary import REPLACE_MAP, PUNCTUATION, NO_MEANING_PUNCTUATION, KATAKANA, HIRAGANA, NO_MEANING_WORDS
+
         for _old, _new in REPLACE_MAP.items():
-            self.__words[_old] = _new
+            self.__replace_words[_old] = _new
+
+        self.__punctuation = PUNCTUATION
+        self.__no_meaning_punctuation = NO_MEANING_PUNCTUATION
+        self.__katakana = KATAKANA
+        self.__hiragana = HIRAGANA
+        self.__no_meaning_words = NO_MEANING_WORDS
 
     def deal(self, text: str) -> str:
-        for _old, _new in self.__words.items():
+        temp_text = text
+        if text[-1] in self.__punctuation or text[-1] in self.__no_meaning_punctuation:
+            temp_text = text[:-1]
+
+        if temp_text in self.__katakana or temp_text in self.__hiragana or temp_text in self.__no_meaning_words:
+            return ''
+
+        if text[-1] in self.__no_meaning_punctuation:
+            text = text[:-1]
+
+        for _old, _new in self.__replace_words.items():
             text = text.replace(_old, _new)
 
         return text

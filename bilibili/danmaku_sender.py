@@ -158,19 +158,10 @@ class DanmakuSender:
 
         result, resp = await self.__send(msg)
         if result != ESendResult.Success:
-            # Retry
-            await asyncio.sleep(utils.SEND_INTERVAL)
-            result, resp = await self.__send(msg)
-            if result != ESendResult.Success:
-                if result in ErrorString:
-                    utils.logger.log_error(f"消息{msg}： {ErrorString[result]}")
-                else:
-                    utils.logger.log_error(f"消息{msg}：未知错误： {result}")
-
-            await asyncio.sleep(utils.SEND_INTERVAL)
-            self.__send_lock.release()
-
-            return False
+            if result in ErrorString:
+                utils.logger.log_error(f"消息{msg}： {ErrorString[result]}")
+            else:
+                utils.logger.log_error(f"消息{msg}：未知错误： {result}")
 
         await asyncio.sleep(utils.SEND_INTERVAL)
         self.__send_lock.release()
