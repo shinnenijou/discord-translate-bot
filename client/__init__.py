@@ -73,7 +73,8 @@ class MyClient(discord.Client):
         # Wait for lag
         send_lag = int(channel_config.get('send_lag', utils.SEND_LAG))
         elapse = (utils.get_ms_time() - elapse)/1000
-        await asyncio.sleep(send_lag - elapse)
+        if elapse < send_lag:
+            await asyncio.sleep(send_lag - elapse)
 
         for dst_text in dst_texts:
             if len(dst_text) <= 2:
@@ -84,10 +85,6 @@ class MyClient(discord.Client):
             first_flag = True
             for text in texts:
                 result = await self.__danmaku_senders[channel_id].send(text)
-                if result:
-                    utils.logger.log_info(f'[Successfully]Message {message.content} -> {text}')
-                else:
-                    utils.logger.log_error(f'[Failed]Message {message.content} -> {text}')
 
                 if first_flag:
                     first_flag = False

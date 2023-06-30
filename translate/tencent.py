@@ -116,6 +116,9 @@ class TencentTranslator(Translator):
             utils.logger.log_error(f"翻译失败: {self.ErrorString.get(result, f'未知错误 {result}')}")
             return []
 
+        for i in range(len(_src)):
+            utils.logger.log_info(f'[Tencent]Translate: {_src[i]} -> {dst[i]}')
+
         return dst
 
     def _validate_config(self):

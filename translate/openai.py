@@ -63,8 +63,8 @@ class GPTTranslator(Translator):
             contents.append(message.get('content'))
             result = self.EResult.Success
 
-        if result != self.EResult.Success:
-            utils.logger.log_error(f"翻译失败: {self.ErrorString.get(result, f'未知错误 {result}')}")
+        total_token = resp.get('usage', {}).get('total_tokens', 0)
+        utils.logger.log_info(f'[GPT]Translate: {_src[0]} -> {contents[0]}, token: {total_token}')
 
         return contents
 
