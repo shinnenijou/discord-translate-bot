@@ -168,6 +168,8 @@ class DanmakuSender:
                 else:
                     utils.logger.log_error(f"消息{msg}：未知错误： {result}")
 
+            self.__send_lock.release()
+
             return False
 
         await asyncio.sleep(utils.SEND_INTERVAL)
