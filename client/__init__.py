@@ -171,6 +171,7 @@ class MyClient(discord.Client):
         self.__command_handler["SET"] = self.__set_config
         self.__command_handler["START"] = self.__start_channel
         self.__command_handler["STOP"] = self.__stop_channel
+        self.__command_handler["QUERY"] = self.__query_setting
 
         return True
 
@@ -259,4 +260,17 @@ class MyClient(discord.Client):
             file.write(json.dumps(self.__channel_config))
 
         return ECommandResult.SuccessSet
-    
+
+    async def __query_setting(self, message):
+        channel_id = str(message.channel.id)
+        if channel_id not in self.__channel_config:
+            return ECommandResult.NoConfig
+
+        msg = "[Channel Setting]\n"
+        for key, value in self.__channel_config[channel_id].items():
+            msg += f"{key}: {value}\n"
+
+        if msg:
+            await message.channel.send(msg)
+
+        return ECommandResult.Success
