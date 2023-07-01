@@ -47,6 +47,7 @@ class DanmakuSender:
         # send queue control
         self.__send_queue = asyncio.Queue(maxsize=0)
         self.__send_lock = asyncio.Lock()
+        self.__last_time = 0
 
         self.__timer = 0
 
@@ -165,6 +166,11 @@ class DanmakuSender:
         await self.__send_lock.acquire()
         task = await self.__send_queue.get()
 
+        cur_ms_time = utils.get_ms_time()
+        next_send_time = self.__last_time + utils.SEND_INTERVAL * 1000
+        if cur_ms_time < next_send_time:
+            await asyncio.sleep((next_send_time - cur_ms_time) / 1000)
+
         result, resp = await self.__send(task['room_id'], task['message'])
         if result != ESendResult.Success:
             if result in ErrorString:
@@ -172,7 +178,7 @@ class DanmakuSender:
             else:
                 utils.logger.log_error(f"[Danmaku]消息{task['message']}：未知错误： {result}")
 
-        await asyncio.sleep(utils.SEND_INTERVAL)
+        self.__last_time = utils.get_ms_time()
         self.__send_lock.release()
 
         return True
