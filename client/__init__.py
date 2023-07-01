@@ -90,7 +90,7 @@ class MyClient(discord.Client):
             texts = utils.slice_text(dst_text)
 
             for text in texts:
-                await self.__danmaku_senders[channel_id].send(text)
+                await self.__danmaku_senders[channel_id].send(channel_config['room_id'], text)
 
     async def __handle_command(self, content, message):
         if len(content) < 2:
@@ -152,8 +152,8 @@ class MyClient(discord.Client):
             _bili_jct = channel_config.get('bili_jct', '')
             _buvid3 = channel_config.get('buvid3', '')
 
-            self.__danmaku_senders[channel_id] = DanmakuSender(_room_id, _sessdata, _bili_jct, _buvid3)
-            if self.__danmaku_senders[channel_id].init() != ECommandResult.Success:
+            self.__danmaku_senders[channel_id] = DanmakuSender(_sessdata, _bili_jct, _buvid3)
+            if self.__danmaku_senders[channel_id].init(_room_id) != ECommandResult.Success:
                 del self.__danmaku_senders[channel_id]
                 channel_config['status'] = 0
             else:
@@ -199,8 +199,8 @@ class MyClient(discord.Client):
             del self.__translators[channel_id]
             return ECommandResult.FailedStartTranslator
 
-        self.__danmaku_senders[channel_id] = DanmakuSender(_room_id, _sessdata, _bili_jct, _buvid3)
-        result = self.__danmaku_senders[channel_id].init()
+        self.__danmaku_senders[channel_id] = DanmakuSender(_sessdata, _bili_jct, _buvid3)
+        result = self.__danmaku_senders[channel_id].init(_room_id)
         if result != ECommandResult.Success :
             del self.__danmaku_senders[channel_id]
             return result
