@@ -84,9 +84,6 @@ class MyClient(discord.Client):
             await asyncio.sleep(send_lag - elapse)
 
         for dst_text in dst_texts:
-            if len(dst_text) <= 2:
-                continue
-
             texts = utils.slice_text(dst_text)
 
             for text in texts:
