@@ -28,6 +28,15 @@ class GPTTranslator(Translator):
         'en': "English"
     }
 
+    Filter = {
+        'Simplified': True,
+        'simplified': True,
+        '简体中文': True,
+        'Chinese': True,
+        'translation': True,
+        'translate': True,
+    }
+
     instance = {}
 
     def __new__(cls, *args, **kwargs):
@@ -59,6 +68,13 @@ class GPTTranslator(Translator):
     def _parse_response(self, data: dict) -> (int, list[str]):
         return
 
+    def is_valid_sentence(self, text: str):
+        for key, value in self.Filter.items():
+            if text.find(key) != -1:
+                return False
+
+        return True
+
     async def translate(self, _src: list[str], _from: str = 'jp', _to: str = 'zh') -> list[str]:
         if _from not in self.Language or _to not in self.Language:
             utils.logger.log_error(f"[GPT]Translate Failed: Language not support, {_from}->{_to})")
@@ -76,7 +92,10 @@ class GPTTranslator(Translator):
             resp = await openai.ChatCompletion.acreate(
                 model=self.id,
                 messages=[
-                    {"role": "user", "content": f"Translate this into {self.Language[_to]}: \n\n{src_text}"}
+                    {
+                        "role": "user",
+                        "content": f"Translate this into {self.Language[_to]}. Please return only translated content: \n\n{src_text}"
+                    }
                 ]
             )
         except Exception as e:
@@ -86,7 +105,7 @@ class GPTTranslator(Translator):
         choices = resp.get('choices')
         for choice in choices:
             content = choice.get('message').get('content')
-            if content.replace(src_text, '').isascii():
+            if not self.is_valid_sentence(content):
                 continue
 
             contents.append(content)
