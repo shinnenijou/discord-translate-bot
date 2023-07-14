@@ -244,11 +244,12 @@ class MyClient(discord.Client):
         if config.get_user_config(channel_id, user, 'running', False):
             return ECommandResult.ChannelRunning
 
-        i = 3
-        while i < len(params):
-            key = params[i - 1].lower()
-            config.set_user_config(channel_id, user, key, params[i])
-            i = i + 2
+        for param in params:
+            kv = param.split('=')
+            if len(kv) < 2:
+                continue
+
+            config.set_user_config(channel_id, user, kv[0], kv[1])
 
         return ECommandResult.SuccessSet
 
