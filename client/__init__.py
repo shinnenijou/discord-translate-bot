@@ -1,10 +1,12 @@
 import asyncio
-import json
+import os
+
+import aiohttp
 
 import discord
 
 import utils
-from utils import ECommandResult
+from utils import ECommandResult, config
 from translate import TRANSLATORS_MAP
 from bilibili import DanmakuSender, BiliLiveAntiShield, words, rules
 
@@ -22,6 +24,7 @@ class MyClient(discord.Client):
 
     async def close(self) -> None:
         await super().close()
+
         if not self.__translators:
             for translator in self.__translators.values():
                 await translator.close()
@@ -50,18 +53,14 @@ class MyClient(discord.Client):
                 await message.channel.send(utils.CommandResultString[result])
             return
 
-        channel = message.channel
-        channel_id = str(channel.id)
+        channel_id = str(message.channel.id)
+        user = message.author.name
 
-        if channel_id not in self.__channel_config or channel_id not in self.__danmaku_senders:
+        if not config.get_user_config(channel_id, user, 'running', False):
             return
 
-        channel_config = self.__channel_config[channel_id]
+        language = config.get_user_config(channel_id, user, 'language', "jp->zh").split('->')
 
-        if 'user' not in channel_config or message.author.name != channel_config['user']:
-            return
-
-        language = channel_config.get('language', "jp->zh").split('->')
         if len(language) < 2:
             return
 
@@ -77,17 +76,23 @@ class MyClient(discord.Client):
 
             dst_texts[i] = self.__anti_shield.deal(dst_texts[i])
 
-        # Wait for lag
-        send_lag = int(channel_config.get('send_lag', utils.SEND_LAG))
-        elapse = (utils.get_ms_time() - elapse)/1000
-        if elapse < send_lag:
-            await asyncio.sleep(send_lag - elapse)
+        if config.get_user_config(channel_id, user, 'send', 'live') == 'live':
+            # Wait for lag
+            send_lag = int(config.get_user_config(channel_id, user, 'send_lag', utils.SEND_LAG))
+            elapse = (utils.get_ms_time() - elapse) / 1000
+            if elapse < send_lag:
+                await asyncio.sleep(send_lag - elapse)
 
-        for dst_text in dst_texts:
-            texts = utils.slice_text(dst_text)
+            for dst_text in dst_texts:
+                texts = utils.slice_text(dst_text)
 
-            for text in texts:
-                await self.__danmaku_senders[channel_id].send(channel_config['room_id'], text)
+                for text in texts:
+                    await self.__danmaku_senders[channel_id].send(
+                        config.get_user_config(channel_id, user, 'room_id'), text)
+        elif config.get_user_config(channel_id, user, 'send', 'live') == 'webhook':
+            for dst_text in dst_texts:
+                await self.__send_webhook(
+                    config.get_user_config(channel_id, user, 'webhook_url', ''), 'subtitle', f'【{user}】' + dst_text)
 
     async def __handle_command(self, content, message):
         if len(content) < 2:
@@ -99,65 +104,45 @@ class MyClient(discord.Client):
 
         return ECommandResult.UnknownCommand
 
-    def init_channel_config(self, config):
-        self.__config = config
+    def init_channels(self):
+        for channel, channel_config in config.get_all_channels().items():
+            for user, user_config in channel_config.items():
 
-        with open("channel_config.json", "a") as file:
-            pass
+                if not user_config.get('running', False):
+                    continue
 
-        with open("channel_config.json", "r") as file:
-            text = file.read()
-            if text == '':
-                self.__channel_config = {}
-            else:
-                self.__channel_config = json.loads(text)
+                if not config.is_user_config_valid(channel, user):
+                    config.set_user_config(channel, user, 'running', False)
 
-        return True
+                api = channel_config.get('api', 'baidu')
 
-    def init_translator(self):
-        for channel_id, channel_config in self.__channel_config.items():
-            if channel_config.get('status', 0) == 0:
-                continue
+                if api not in TRANSLATORS_MAP:
+                    continue
 
-            user = channel_config.get('user', '')
-            room_id = channel_config.get('room_id', '')
-            api = channel_config.get('api', 'baidu')
+                self.__translators[channel] = TRANSLATORS_MAP[api](config.get_api_keys(api)[0], config.get_api_keys(api)[1])
+                if not self.__translators[channel].init():
+                    del self.__translators[channel]
+                    config.set_user_config(channel, user, 'running', False)
+                    continue
 
-            if api not in TRANSLATORS_MAP:
-                continue
+                utils.logger.log_info(f'[Successfully]Translator for {user} is ready.')
 
-            self.__translators[channel_id] = TRANSLATORS_MAP[api](self.__config[api]['id'], self.__config[api]['key'])
-            if not self.__translators[channel_id].init():
-                del self.__translators[channel_id]
-            else:
-                utils.logger.log_info(f'[Successfully]Translator for {user}({room_id}) is ready.')
+                if config.get_user_config(channel, user, 'send') == 'live':
+                    _room_id = channel_config.get('room_id')
+                    _sessdata = channel_config.get('sessdata')
+                    _bili_jct = channel_config.get('bili_jct')
+                    _buvid3 = channel_config.get('buvid3')
 
-        return True
+                    self.__danmaku_senders[channel] = DanmakuSender(_sessdata, _bili_jct, _buvid3)
+                    if self.__danmaku_senders[channel].init(_room_id) != ECommandResult.Success:
+                        del self.__translators[channel]
+                        del self.__danmaku_senders[channel]
+                        config.set_user_config(channel, user, 'running', False)
+                        continue
 
-    def init_danmaku_sender(self):
-        for channel_id, channel_config in self.__channel_config.items():
-            if channel_config.get('status', 0) == 0:
-                continue
-
-            if channel_id not in self.__translators:
-                channel_config['status'] = 0
-                continue
-
-            _user = channel_config.get('user', '')
-            _room_id = channel_config.get('room_id', '')
-            _sessdata = channel_config.get('sessdata', '')
-            _bili_jct = channel_config.get('bili_jct', '')
-            _buvid3 = channel_config.get('buvid3', '')
-
-            self.__danmaku_senders[channel_id] = DanmakuSender(_sessdata, _bili_jct, _buvid3)
-            if self.__danmaku_senders[channel_id].init(_room_id) != ECommandResult.Success:
-                del self.__danmaku_senders[channel_id]
-                channel_config['status'] = 0
-            else:
-                utils.logger.log_info(f'[Successfully]Danmaku sender for {_user}({_room_id}) started.')
-
-        with open("channel_config.json", "w") as file:
-            file.write(json.dumps(self.__channel_config))
+                    utils.logger.log_info(f'[Successfully]Danmaku sender for {user}({_room_id}) started.')
+                elif config.get_user_config(channel, user, 'send') == 'webhook':
+                    utils.logger.log_info(f'[Successfully]Webhook for {user} started.')
 
         return True
 
@@ -167,111 +152,156 @@ class MyClient(discord.Client):
 
     def init_command_handler(self):
         self.__command_handler["SET"] = self.__set_config
-        self.__command_handler["START"] = self.__start_channel
-        self.__command_handler["STOP"] = self.__stop_channel
+        self.__command_handler["START"] = self.__start_user
+        self.__command_handler["STOP"] = self.__stop_user
         self.__command_handler["QUERY"] = self.__query_setting
+        self.__command_handler["RENAME"] = self.__rename
 
         return True
 
-    async def __start_channel(self, message):
+    async def __start_user(self, message):
         channel_id = str(message.channel.id)
-        if channel_id not in self.__channel_config:
+        user = message.content.strip().split()[-1]
+
+        if not config.get_user(channel_id, user):
             return ECommandResult.NoConfig
 
-        if self.__channel_config[channel_id].get('status', 0) == 1:
+        if config.get_user_config(channel_id, user, 'running', False):
             return ECommandResult.SuccessStart
 
-        channel_config = self.__channel_config[channel_id]
-        _room_id = channel_config.get('room_id', '')
-        _sessdata = channel_config.get('sessdata', '')
-        _bili_jct = channel_config.get('bili_jct', '')
-        _buvid3 = channel_config.get('buvid3', '')
-        _api = channel_config.get('api', 'baidu')
+        if not config.is_user_config_valid(channel_id, user):
+            return ECommandResult.NoConfig
+
+        _api = config.get_user_config(channel_id, user, 'api')
 
         if _api not in TRANSLATORS_MAP:
             return ECommandResult.InvalidAPI
 
-        self.__translators[channel_id] = TRANSLATORS_MAP[_api](self.__config[_api]['id'], self.__config[_api]['key'])
+        self.__translators[channel_id] = TRANSLATORS_MAP[_api](config.get_api_keys(_api)[0], config.get_api_keys(_api)[1])
+
         if not self.__translators[channel_id].init():
             del self.__translators[channel_id]
             return ECommandResult.FailedStartTranslator
 
-        self.__danmaku_senders[channel_id] = DanmakuSender(_sessdata, _bili_jct, _buvid3)
-        result = self.__danmaku_senders[channel_id].init(_room_id)
-        if result != ECommandResult.Success :
-            del self.__danmaku_senders[channel_id]
-            return result
+        if config.get_user_config(channel_id, user, 'send') == 'live':
+            _room_id = config.get_user_config(channel_id, user, 'room_id')
+            _sessdata = config.get_user_config(channel_id, user, 'sessdata')
+            _bili_jct = config.get_user_config(channel_id, user, 'bili_jct')
+            _buvid3 = config.get_user_config(channel_id, user, 'buvid3')
 
-        self.__channel_config[channel_id]['status'] = 1
-        with open("channel_config.json", "w") as file:
-            file.write(json.dumps(self.__channel_config))
+            self.__danmaku_senders[channel_id] = DanmakuSender(_sessdata, _bili_jct, _buvid3)
 
-        await message.channel.send(
-            f"API: {_api}, LiveRoom: {_room_id}, Sender: {self.__danmaku_senders[channel_id].get_user_info()}"
-        )
+            result = self.__danmaku_senders[channel_id].init(_room_id)
+
+            if result != ECommandResult.Success:
+                del self.__danmaku_senders[channel_id]
+                del self.__translators[channel_id]
+                return result
+
+            await message.channel.send(
+                f"API: {_api}, Room: {_room_id}, Sender: {self.__danmaku_senders[channel_id].get_user_info()}"
+            )
+        elif config.get_user_config(channel_id, user, 'send') == 'webhook':
+            await message.channel.send(f"API: {_api}, send to webhook")
+
+        config.set_user_config(channel_id, user, 'running', True)
 
         return ECommandResult.SuccessStart
 
-    async def __stop_channel(self, message):
+    async def __stop_user(self, message):
         channel_id = str(message.channel.id)
-        if channel_id not in self.__channel_config:
+        user = message.content.strip().split()[-1]
+
+        if not config.get_user(channel_id, user):
             return ECommandResult.NoConfig
 
-        if self.__channel_config[channel_id].get('status', 0) == 0:
+        if not config.get_user_config(channel_id, user, 'running', False):
             return ECommandResult.SuccessStop
 
         await self.__translators[channel_id].close()
         del self.__translators[channel_id]
 
-        await self.__danmaku_senders[channel_id].close()
-        del self.__danmaku_senders[channel_id]
+        if config.get_user_config(channel_id, user, 'send') == 'live':
+            await self.__danmaku_senders[channel_id].close()
+            del self.__danmaku_senders[channel_id]
+        elif config.get_user_config(channel_id, user, 'send') == 'webhook':
+            pass
 
-        self.__channel_config[channel_id]['status'] = 0
-        with open("channel_config.json", "w") as file:
-            file.write(json.dumps(self.__channel_config))
+        config.set_user_config(channel_id, user, 'running', False)
 
         return ECommandResult.SuccessStop
 
-    async def __set_config(self, message):
+    @staticmethod
+    async def __set_config(message):
         params = message.content.strip().split()
-        if len(params) < 2:
+
+        if len(params) <= 2:
             return ECommandResult.InvalidParams
 
         channel_id = str(message.channel.id)
-        if channel_id not in self.__channel_config:
-            self.__channel_config[channel_id] = {}
-        elif self.__channel_config[channel_id].get('status', 0) == 1:
+        user = params[1]
+
+        if config.get_user_config(channel_id, user, 'running', False):
             return ECommandResult.ChannelRunning
 
-        i = 2
+        i = 3
         while i < len(params):
             key = params[i - 1].lower()
-            self.__channel_config[channel_id][key] = params[i]
+            config.set_user_config(channel_id, user, key, params[i])
             i = i + 2
-
-        self.__channel_config[channel_id]['status'] = 0
-
-        if 'api' not in self.__channel_config[channel_id]:
-            self.__channel_config[channel_id]['api'] = 'baidu'
-
-        if 'language' not in self.__channel_config[channel_id]:
-            self.__channel_config[channel_id]['language'] = 'jp->zh'
-
-        with open("channel_config.json", "w") as file:
-            file.write(json.dumps(self.__channel_config))
 
         return ECommandResult.SuccessSet
 
-    async def __query_setting(self, message):
+    @staticmethod
+    async def __rename(message):
+        params = message.content.strip().split()
+
+        if len(params) <= 2:
+            return ECommandResult.InvalidParams
+
         channel_id = str(message.channel.id)
-        if channel_id not in self.__channel_config:
+        old_name = params[1]
+        new_name = params[2]
+
+        if not config.get_user(channel_id, old_name):
+            return ECommandResult.UserNotFount
+
+        config.rename_user(channel_id, old_name, new_name)
+
+        return ECommandResult.SuccessSet
+
+    @staticmethod
+    async def __query_setting(message):
+        channel_id = str(message.channel.id)
+        if channel_id not in config.get_all_channels():
             return ECommandResult.NoConfig
 
         msg = "[Channel Setting]\n"
-        for key, value in self.__channel_config[channel_id].items():
-            msg += f"{key}: {value}\n"
+        for user, user_config in config.get_channel(channel_id).items():
+            msg += f"[{user}]\n"
+            for key, value in user_config.items():
+                msg += f"{key}: {value}\n"
+
+            msg += "\n"
 
         if msg:
             await message.channel.send(msg)
 
         return ECommandResult.Success
+
+    @staticmethod
+    async def __send_webhook(url, name, content):
+        if not url or not content:
+            return
+
+        payload = {
+            'content': content,
+            'username': name
+        }
+
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.post(url, json=payload, proxy=os.getenv('PROXY', None)) as resp:
+                    pass
+        except Exception as e:
+            utils.logger.log_error("[WebhookSender:send]" + str(e))

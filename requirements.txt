@@ -2,3 +2,4 @@ discord.py
 requests
 aiohttp
 openai
+python-dotenv

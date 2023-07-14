@@ -1,30 +1,3 @@
-DISCORD_FIELDS = {
-    'token': ''
-}
-
-BAIDU_FIELDS = {
-    'id': '',
-    'key': ''
-}
-
-TENCENT_FIELDS = {
-    'id': '',
-    'key': ''
-}
-
-BILIBILI_FIELDS = {
-    'room_id': '',
-    'sessdata': '',
-    'bili_jct': '',
-    'buvid3': ''
-}
-
-CONFIG_FIELDS = {
-    'discord': DISCORD_FIELDS,
-    'baidu': BAIDU_FIELDS,
-    'tencent': TENCENT_FIELDS,
-}
-
 SEND_INTERVAL = 1
 SEND_LAG = 3
 
@@ -44,6 +17,7 @@ class ECommandResult:
     SuccessStop = 11
     GetUserInfoError = 12
     GetDanmakuConfigError = 13
+    UserNotFount = 14
 
 
 CommandResultString = {
@@ -58,5 +32,6 @@ CommandResultString = {
     ECommandResult.SuccessSet: "Successfully set config.",
     ECommandResult.UnknownCommand: "Unknown Command.",
     ECommandResult.GetUserInfoError: "Failed to get user info. Please check bilibili account cookies again.",
-    ECommandResult.GetDanmakuConfigError: "Failed to get danmaku config. Please check bilibili room_id again."
+    ECommandResult.GetDanmakuConfigError: "Failed to get danmaku config. Please check bilibili room_id again.",
+    ECommandResult.UserNotFount: "User not found.",
 }

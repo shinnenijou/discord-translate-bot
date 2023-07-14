@@ -4,7 +4,7 @@ import time
 import os
 
 from .const import *
-
+from .config import *
 
 class Logger:
     def __init__(self):
@@ -35,18 +35,6 @@ def get_date():
 
 def get_hms_time():
     return time.strftime("%H-%M-%S", time.gmtime())
-
-
-def check_config(config: RawConfigParser) -> bool:
-    for field, _dict in CONFIG_FIELDS.items():
-        if not config.has_section(field):
-            return False
-
-        for option, _ in _dict.items():
-            if not config.has_option(field, option):
-                return False
-
-    return True
 
 
 def slice_text(text: str, max_length: int = 20, prefix: str = '机翻【', suffix: str = '】') -> list:
