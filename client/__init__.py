@@ -9,6 +9,7 @@ import utils
 from utils import ECommandResult, config
 from translate import TRANSLATORS_MAP
 from bilibili import DanmakuSender, BiliLiveAntiShield, words, rules
+from webhook import WebhookSender
 
 
 class MyClient(discord.Client):
@@ -20,7 +21,7 @@ class MyClient(discord.Client):
         self.__anti_shield = None
         self.__channel_config = {}
         self.__command_handler = {}
-        self.__config = None
+        self.__webhook_sender = WebhookSender()
 
     async def close(self) -> None:
         await super().close()
@@ -91,8 +92,8 @@ class MyClient(discord.Client):
                         config.get_user_config(channel_id, user, 'room_id'), text)
         elif config.get_user_config(channel_id, user, 'send', 'live') == 'webhook':
             for dst_text in dst_texts:
-                await self.__send_webhook(
-                    config.get_user_config(channel_id, user, 'webhook_url', ''), 'subtitle', f'【{user}】' + dst_text)
+                await self.__webhook_sender.send(
+                    config.get_user_config(channel_id, user, 'webhook_url', ''), user, dst_text)
 
     async def __handle_command(self, content, message):
         if len(content) < 2:
@@ -305,21 +306,3 @@ class MyClient(discord.Client):
             await message.channel.send(msg)
 
         return ECommandResult.Success
-
-    # TODO reuse session
-    @staticmethod
-    async def __send_webhook(url, name, content):
-        if not url or not content:
-            return
-
-        payload = {
-            'content': content,
-            'username': name
-        }
-
-        try:
-            async with aiohttp.ClientSession() as session:
-                async with session.post(url, json=payload, proxy=os.getenv('PROXY', None)) as resp:
-                    pass
-        except Exception as e:
-            utils.logger.log_error("[WebhookSender:send]" + str(e))
