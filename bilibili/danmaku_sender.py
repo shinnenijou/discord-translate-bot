@@ -24,7 +24,7 @@ class DanmakuSender:
 
         return cls.instance[_sessdata]
 
-    def __init__(self, _sessdata: str, _bili_jct: str, _buvid3: str, _timeout_sec: int = 1800):
+    def __init__(self, _sessdata: str, _bili_jct: str, _buvid3: str, _timeout_sec: int = 5):
         # requests config
         self.__url = "https://api.live.bilibili.com/msg/send"
         self.__headers = {
@@ -37,7 +37,10 @@ class DanmakuSender:
         self.__csrf = _bili_jct
         self.__cookies = {'buvid3': _buvid3, 'SESSDATA': _sessdata, 'bili_jct': _bili_jct}
         self.__timeout_sec = _timeout_sec
-        self.__session = None
+        self.__session = aiohttp.ClientSession(
+                timeout=aiohttp.ClientTimeout(total=self.__timeout_sec),
+                cookies=self.__cookies
+            )
 
         # danmaku config
         self.__mode = EDanmakuPosition.Roll
@@ -74,17 +77,6 @@ class DanmakuSender:
         :param data: post数据
         :return: 返回结果枚举与响应体
         """
-        cur_time = int(time())
-        if cur_time > self.__timer:
-            if self.__session is not None:
-                await self.__session.close()
-
-            self.__session = aiohttp.ClientSession(
-                timeout=aiohttp.ClientTimeout(total=self.__timeout_sec),
-                cookies=self.__cookies
-            )
-            self.__timer = cur_time + self.__timeout_sec - 60
-
         result = ESendResult.Error
         payload = None
         try:
@@ -106,17 +98,6 @@ class DanmakuSender:
         :param params: 请求参数
         :return: 返回结果枚举与响应体
         """
-        cur_time = int(time())
-        if cur_time > self.__timer:
-            if self.__session is not None:
-                await self.__session.close()
-
-            self.__session = aiohttp.ClientSession(
-                timeout=aiohttp.ClientTimeout(total=self.__timeout_sec),
-                cookies=self.__cookies
-            )
-            self.__timer = cur_time + self.__timeout_sec - 60
-
         result = ESendResult.Error
         payload = None
         try:
