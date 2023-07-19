@@ -34,6 +34,8 @@ class MyClient(discord.Client):
             for danmaku_sender in self.__danmaku_senders.values():
                 await danmaku_sender.close()
 
+        await self.__webhook_sender.close()
+
     async def on_ready(self):
         pass
 
