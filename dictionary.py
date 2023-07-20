@@ -91,3 +91,7 @@ NO_MEANING_WORDS = {
     'はい': True, 'よし': True, 'んー': True, 'ああ': True, 'やあ': True, 'うん': True, 'えっ': True, 'ねえ': True,
     'わー': True, 'うーん': True,
 }
+
+NG_WORDS = {
+    'Amara.org': True,
+}
