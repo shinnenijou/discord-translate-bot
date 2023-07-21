@@ -18,7 +18,8 @@ class Config:
         'api': '',
         'send': '',  # 'live', 'webhook'
         'webhook_url': '',
-        'send_lag': ''
+        'send_lag': '',
+        'language': '',
     }
 
     # 运行基本功能所必须的字段, 如果没有配置这些字段, 则应当拒绝启动
