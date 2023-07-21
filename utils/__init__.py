@@ -64,13 +64,14 @@ class TextProcessor:
         self.__katakana = {}
         self.__hiragana = {}
         self.__no_meaning_words = {}
+        self.__ng_words = {}
         self.load_words()
 
     def load_words(self):
         self.__replace_words = {}
         self.__punctuation = {}
 
-        from dictionary import REPLACE_MAP, PUNCTUATION, NO_MEANING_PUNCTUATION, KATAKANA, HIRAGANA, NO_MEANING_WORDS
+        from dictionary import REPLACE_MAP, PUNCTUATION, NO_MEANING_PUNCTUATION, KATAKANA, HIRAGANA, NO_MEANING_WORDS, NG_WORDS
 
         for _old, _new in REPLACE_MAP.items():
             self.__replace_words[_old] = _new
@@ -80,8 +81,11 @@ class TextProcessor:
         self.__katakana = KATAKANA
         self.__hiragana = HIRAGANA
         self.__no_meaning_words = NO_MEANING_WORDS
+        self.__ng_words = NG_WORDS
 
     def deal(self, text: str) -> str:
+
+
         temp_text = text
         if text[-1] in self.__punctuation or text[-1] in self.__no_meaning_punctuation:
             temp_text = text[:-1]
@@ -91,6 +95,10 @@ class TextProcessor:
 
         if text[-1] in self.__no_meaning_punctuation:
             text = text[:-1]
+
+        for word, _ in self.__ng_words.items():
+            if text.find(word) != -1:
+                return ''
 
         for _old, _new in self.__replace_words.items():
             text = text.replace(_old, _new)

@@ -20,6 +20,10 @@ class WebhookSender:
         self.__lock = asyncio.Lock()
         self.__message_queue = asyncio.Queue(maxsize=0)
 
+        self.__name_map = {
+            '308': '魔狼咪莉娅'
+        }
+
     async def close(self):
         if self.__session is not None:
             await self.__session.close()
@@ -31,6 +35,9 @@ class WebhookSender:
         if self.__session is None:
             self.__session = aiohttp.ClientSession(
                 timeout=aiohttp.ClientTimeout(total=int(os.getenv('session_timeout', 5))))
+
+        if name in self.__name_map:
+            name = self.__name_map[name]
 
         send_request = (url, name, content)
         #await self.__message_queue.put(send_request)
