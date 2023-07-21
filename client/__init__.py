@@ -67,11 +67,15 @@ class MyClient(discord.Client):
         if len(language) < 2:
             return
 
-        content = utils.text_processor.deal(message.content)
-        if not content:
+        contents = []
+
+        for line in message.content.splitlines():
+            contents.append(utils.text_processor.deal(line))
+
+        if len(contents) == 0:
             return
 
-        dst_texts = await self.__translators[channel_id].translate([content], language[0], language[1])
+        dst_texts = await self.__translators[channel_id].translate(contents, language[0], language[1])
 
         for i in range(len(dst_texts)):
             if dst_texts[i][-1] == '。':
