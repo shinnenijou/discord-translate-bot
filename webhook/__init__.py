@@ -33,12 +33,12 @@ class WebhookSender:
                 timeout=aiohttp.ClientTimeout(total=int(os.getenv('session_timeout', 5))))
 
         send_request = (url, name, content)
-        await self.__message_queue.put(send_request)
+        #await self.__message_queue.put(send_request)
 
         # sync lock
-        await self.__lock.acquire()
+        #await self.__lock.acquire()
 
-        send_request = await self.__message_queue.get()
+        #send_request = await self.__message_queue.get()
 
         payload = {
             'content': send_request[2],
@@ -51,4 +51,4 @@ class WebhookSender:
         except Exception as e:
             utils.logger.log_error("[WebhookSender:send]" + str(e))
 
-        self.__lock.release()
+        #self.__lock.release()
