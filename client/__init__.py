@@ -121,7 +121,7 @@ class MyClient(discord.Client):
                 if not config.is_user_config_valid(channel, user):
                     config.set_user_config(channel, user, 'running', False)
 
-                api = channel_config.get('api', 'baidu')
+                api = user_config.get('api', 'baidu')
 
                 if api not in TRANSLATORS_MAP:
                     continue
@@ -134,11 +134,11 @@ class MyClient(discord.Client):
 
                 utils.logger.log_info(f'[Successfully]Translator for {user} is ready.')
 
-                if config.get_user_config(channel, user, 'send') == 'live':
-                    _room_id = channel_config.get('room_id')
-                    _sessdata = channel_config.get('sessdata')
-                    _bili_jct = channel_config.get('bili_jct')
-                    _buvid3 = channel_config.get('buvid3')
+                if user_config.get('send', 'live') == 'live':
+                    _room_id = user_config.get('room_id')
+                    _sessdata = user_config.get('sessdata')
+                    _bili_jct = user_config.get('bili_jct')
+                    _buvid3 = user_config.get('buvid3')
 
                     self.__danmaku_senders[channel] = DanmakuSender(_sessdata, _bili_jct, _buvid3)
                     if self.__danmaku_senders[channel].init(_room_id) != ECommandResult.Success:
