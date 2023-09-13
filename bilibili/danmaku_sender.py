@@ -37,10 +37,7 @@ class DanmakuSender:
         self.__csrf = _bili_jct
         self.__cookies = {'buvid3': _buvid3, 'SESSDATA': _sessdata, 'bili_jct': _bili_jct}
         self.__timeout_sec = _timeout_sec
-        self.__session = aiohttp.ClientSession(
-                timeout=aiohttp.ClientTimeout(total=self.__timeout_sec),
-                cookies=self.__cookies
-            )
+        self.__session = None
 
         # danmaku config
         self.__mode = EDanmakuPosition.Roll
@@ -77,6 +74,13 @@ class DanmakuSender:
         :param data: post数据
         :return: 返回结果枚举与响应体
         """
+
+        if self.__session is None:
+            self.__session = aiohttp.ClientSession(
+                timeout=aiohttp.ClientTimeout(total=self.__timeout_sec),
+                cookies=self.__cookies
+            )
+
         result = ESendResult.Error
         payload = None
         try:
