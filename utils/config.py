@@ -68,7 +68,7 @@ class Config:
 
     def save(self):
         with open(self.__filename, 'w') as file:
-            file.write(json.dumps(self.__channel_config))
+            file.write(json.dumps(self.__channel_config, indent=4))
 
     def reload(self):
         with open(self.__filename, 'r') as file:
