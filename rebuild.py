@@ -48,6 +48,7 @@ cmd = "docker run --name discord_bot " \
     + f"--mount type=bind,source={CUR_DIR}/config.json,target=/app/config.json " \
     + f"--mount type=bind,source={CUR_DIR}/dictionary.py,target=/app/dictionary.py " \
     + "--restart=always " \
+    + "-d " \
     + "discord_bot:latest" 
 
 print(cmd)
