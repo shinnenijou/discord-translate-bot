@@ -68,11 +68,12 @@ class TextProcessor:
         self.load_words()
 
     def load_words(self):
-        self.__replace_words = {}
-        self.__punctuation = {}
+        if not os.path.exists("dictionary.py"):
+            return
 
         from dictionary import REPLACE_MAP, PUNCTUATION, NO_MEANING_PUNCTUATION, KATAKANA, HIRAGANA, NO_MEANING_WORDS, NG_WORDS
 
+        self.__replace_words = {}
         for _old, _new in REPLACE_MAP.items():
             self.__replace_words[_old] = _new
 
