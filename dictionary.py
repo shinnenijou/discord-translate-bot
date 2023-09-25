@@ -94,4 +94,6 @@ NO_MEANING_WORDS = {
 
 NG_WORDS = {
     'Amara.org': True,
+    'ご視聴': True,
+    'チャンネル登録': True,
 }
