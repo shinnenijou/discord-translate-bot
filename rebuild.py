@@ -1,6 +1,14 @@
 import os
+import sys
 
 CUR_DIR = os.path.dirname(__file__)
+
+sudo = ''
+
+for flag in sys.argv:
+    if flag == '--sudo':
+        sudo = 'sudo '
+        break
 
 print("------------------------")
 cmd = "git pull"
@@ -8,22 +16,22 @@ print(cmd)
 os.system(cmd)
 
 print("------------------------")
-cmd = "docker stop discord_bot"
+cmd = f"{sudo}docker stop discord_bot"
 print(cmd)
 os.system(cmd)
 
 print("------------------------")
-cmd = "docker rm discord_bot"
+cmd = f"{sudo}docker rm discord_bot"
 print(cmd)
 os.system(cmd)
 
 print("------------------------")
-cmd = "docker image rm discord_bot"
+cmd = f"{sudo}docker image rm discord_bot"
 print(cmd)
 os.system(cmd)
 
 print("------------------------")
-cmd = "docker build -t discord_bot ."
+cmd = f"{sudo}docker build -t discord_bot ."
 print(cmd)
 os.system(cmd)
 
@@ -42,7 +50,7 @@ if not os.path.exists(LOG_DIR):
     os.mkdir(LOG_DIR)
 
 print("------------------------")
-cmd = "docker run --name discord_bot " \
+cmd = f"{sudo}docker run --name discord_bot " \
     + f"--mount type=bind,source={CUR_DIR}/logs,target=/app/logs " \
     + f"--mount type=bind,source={CUR_DIR}/.env,target=/app/.env " \
     + f"--mount type=bind,source={CUR_DIR}/config.json,target=/app/config.json " \
