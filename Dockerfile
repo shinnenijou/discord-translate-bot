@@ -5,13 +5,7 @@ STOPSIGNAL SIGINT
 
 ENV PATH="${PATH}:/root/.local/bin"
 
-COPY bilibili /app/bilibili
-COPY client /app/client
-COPY translate /app/translate
-COPY utils /app/utils
-COPY webhook /app/webhook
-COPY main.py /app
-COPY requirements.txt /app
+COPY . /app
 
 RUN pip install --upgrade -r requirements.txt
 
