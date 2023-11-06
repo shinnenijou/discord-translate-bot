@@ -66,7 +66,7 @@ class TextProcessor:
         self.load_words()
 
     def load_words(self):
-        if not os.path.exists("dictionary.py"):
+        if not os.path.exists(os.path.join("src", "dictionary.py")):
             return
 
         from src.dictionary import REPLACE_MAP, PUNCTUATION, NO_MEANING_PUNCTUATION, KATAKANA, HIRAGANA, NO_MEANING_WORDS, NG_WORDS
