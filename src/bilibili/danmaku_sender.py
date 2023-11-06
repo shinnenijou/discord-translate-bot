@@ -4,8 +4,8 @@ from time import time
 import aiohttp
 import requests
 
-import utils
-from utils import ECommandResult
+from src import utils
+from src.utils import ECommandResult
 from .enums import *
 
 

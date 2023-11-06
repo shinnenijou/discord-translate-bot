@@ -2,7 +2,7 @@ import os
 import sys
 
 def main():
-    logs_dir = './logs'
+    logs_dir = 'data/logs'
     if not os.path.exists(logs_dir) or not os.path.isdir(logs_dir):
         print(f"[Error]Directory {logs_dir} not Exists.")
         return

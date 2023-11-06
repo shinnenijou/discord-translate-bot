@@ -3,7 +3,7 @@ import hashlib
 
 import requests
 
-import utils
+from src import utils
 from .translator import Translator
 
 
@@ -92,7 +92,7 @@ class BaiduTranslator(Translator):
         params = self._make_params(q, _from, _to)
         result, dst = await self._translate(headers, params)
         if result != self.EResult.SUCCESS:
-            utils.logger.log_error(f"翻译失败: {self.ErrorString.get(result,  f'未知错误 {result}')}")
+            utils.logger.log_error(f"翻译失败: {self.ErrorString.get(result, f'未知错误 {result}')}")
             return []
 
         for i in range(len(_src)):

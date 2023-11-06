@@ -1,7 +1,5 @@
-from configparser import RawConfigParser
 import asyncio
 import time
-import os
 
 from .const import *
 from .config import *
@@ -71,7 +69,7 @@ class TextProcessor:
         if not os.path.exists("dictionary.py"):
             return
 
-        from dictionary import REPLACE_MAP, PUNCTUATION, NO_MEANING_PUNCTUATION, KATAKANA, HIRAGANA, NO_MEANING_WORDS, NG_WORDS
+        from src.dictionary import REPLACE_MAP, PUNCTUATION, NO_MEANING_PUNCTUATION, KATAKANA, HIRAGANA, NO_MEANING_WORDS, NG_WORDS
 
         self.__replace_words = {}
         for _old, _new in REPLACE_MAP.items():
@@ -85,8 +83,6 @@ class TextProcessor:
         self.__ng_words = NG_WORDS
 
     def deal(self, text: str) -> str:
-
-
         temp_text = text
         if text[-1] in self.__punctuation or text[-1] in self.__no_meaning_punctuation:
             temp_text = text[:-1]

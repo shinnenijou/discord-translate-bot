@@ -2,7 +2,9 @@ import os
 import json
 import dotenv
 
-dotenv.load_dotenv()
+
+DATA_PATH = "./data"
+dotenv.load_dotenv(os.path.join(DATA_PATH, ".env"))
 
 
 class Config:
@@ -46,7 +48,7 @@ class Config:
         return cls.__instance
 
     def __init__(self):
-        self.__filename = 'config.json'
+        self.__filename = os.path.join(DATA_PATH, 'config.json')
 
         if not os.path.exists(self.__filename):
             with open(self.__filename, 'w') as file:

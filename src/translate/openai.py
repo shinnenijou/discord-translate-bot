@@ -2,7 +2,7 @@ import os
 
 import openai
 
-import utils
+from src import utils
 from .translator import Translator
 
 

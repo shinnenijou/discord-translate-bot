@@ -5,7 +5,7 @@ from queue import Queue
 
 import aiohttp
 
-import utils
+from src import utils
 
 
 class Translator(ABC):

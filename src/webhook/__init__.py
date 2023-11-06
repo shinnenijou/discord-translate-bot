@@ -3,7 +3,7 @@ import os
 
 import aiohttp
 
-import utils
+from src import utils
 
 
 class WebhookSender:

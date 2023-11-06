@@ -1,15 +1,12 @@
 import asyncio
-import os
-
-import aiohttp
 
 import discord
 
-import utils
-from utils import ECommandResult, config
-from translate import TRANSLATORS_MAP
-from bilibili import DanmakuSender, BiliLiveAntiShield, words, rules
-from webhook import WebhookSender
+from src import utils
+from src.utils import ECommandResult, config
+from src.translate import TRANSLATORS_MAP
+from src.bilibili import DanmakuSender, BiliLiveAntiShield, words, rules
+from src.webhook import WebhookSender
 
 
 class MyClient(discord.Client):

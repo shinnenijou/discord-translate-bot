@@ -2,12 +2,12 @@ import os
 
 import discord
 
-import utils
-from client import MyClient
+from src import utils
+from src.client import MyClient
 
 
 def main():
-    utils.logger.init(os.path.abspath("logs"))
+    utils.logger.init(os.path.join(utils.DATA_PATH, "logs"))
 
     intents = discord.Intents.default()
     intents.message_content = True

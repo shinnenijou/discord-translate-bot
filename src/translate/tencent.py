@@ -4,7 +4,7 @@ from urllib.parse import urlencode
 
 import requests
 
-import utils
+from src import utils
 from .translator import Translator
 
 
