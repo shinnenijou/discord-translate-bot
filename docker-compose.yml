@@ -2,6 +2,7 @@ version: "3"
 services:
   bot:
     build: .
+    container_name: discord-bot
     restart: always
     volumes:
       - ./src:/app/src
