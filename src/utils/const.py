@@ -1,5 +1,4 @@
 SEND_INTERVAL = 1
-SEND_LAG = 3
 
 
 class ECommandResult:

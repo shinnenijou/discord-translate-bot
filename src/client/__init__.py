@@ -56,10 +56,10 @@ class MyClient(discord.Client):
         channel_id = str(message.channel.id)
         user = message.author.name
 
-        if not config.get_user_config(channel_id, user, 'running', False):
+        if not config.get_user_config(channel_id, user, 'running'):
             return
 
-        language = config.get_user_config(channel_id, user, 'language', "jp->zh").split('->')
+        language = config.get_user_config(channel_id, user, 'language').split('->')
 
         if len(language) < 2:
             return
@@ -80,23 +80,23 @@ class MyClient(discord.Client):
 
             dst_texts[i] = self.__anti_shield.deal(dst_texts[i])
 
-        if config.get_user_config(channel_id, user, 'send', 'live') == 'live':
+        if config.get_user_config(channel_id, user, 'send')== 'live':
             # Wait for lag
-            send_lag = int(config.get_user_config(channel_id, user, 'send_lag', utils.SEND_LAG))
+            send_lag = int(config.get_user_config(channel_id, user, 'send_lag'))
             elapse = (utils.get_ms_time() - elapse) / 1000
             if elapse < send_lag:
                 await asyncio.sleep(send_lag - elapse)
 
             for dst_text in dst_texts:
-                texts = utils.slice_text(dst_text)
+                texts = utils.slice_text(dst_text, config.get_user_config(channel_id, user, 'prefix'))
 
                 for text in texts:
                     await self.__danmaku_senders[channel_id].send(
                         config.get_user_config(channel_id, user, 'room_id'), text)
-        elif config.get_user_config(channel_id, user, 'send', 'live') == 'webhook':
+        elif config.get_user_config(channel_id, user, 'send') == 'webhook':
             for dst_text in dst_texts:
                 await self.__webhook_sender.send(
-                    config.get_user_config(channel_id, user, 'webhook_url', ''), user, dst_text)
+                    config.get_user_config(channel_id, user, 'webhook_url'), user, dst_text)
 
     async def __handle_command(self, content, message):
         if len(content) < 2:
@@ -178,7 +178,7 @@ class MyClient(discord.Client):
             if not config.get_user(channel_id, user):
                 return ECommandResult.NoConfig
 
-            if config.get_user_config(channel_id, user, 'running', False):
+            if config.get_user_config(channel_id, user, 'running'):
                 return ECommandResult.SuccessStart
 
             if not config.is_user_config_valid(channel_id, user):
@@ -234,7 +234,7 @@ class MyClient(discord.Client):
             if not config.get_user(channel_id, user):
                 continue
 
-            if not config.get_user_config(channel_id, user, 'running', False):
+            if not config.get_user_config(channel_id, user, 'running'):
                 continue
 
             await self.__translators[channel_id].close()
@@ -261,7 +261,7 @@ class MyClient(discord.Client):
         channel_id = str(message.channel.id)
         user = params[1]
 
-        if config.get_user_config(channel_id, user, 'running', False):
+        if config.get_user_config(channel_id, user, 'running'):
             return ECommandResult.ChannelRunning
 
         for param in params:

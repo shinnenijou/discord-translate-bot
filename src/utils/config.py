@@ -10,7 +10,7 @@ dotenv.load_dotenv(os.path.join(DATA_PATH, ".env"))
 class Config:
     __instance = None
 
-    # 功能拓展
+    # 功能拓展, 可配置字段默认值
     __VALID_FIELDS = {
         'room_id': '',
         'sessdata': '',
@@ -18,10 +18,11 @@ class Config:
         'buvid3': '',
         'running': False,
         'api': '',
-        'send': '',  # 'live', 'webhook'
+        'send': 'live',  # 'live', 'webhook'
         'webhook_url': '',
-        'send_lag': '',
-        'language': '',
+        'send_lag': 3,
+        'language': 'jp->zh',
+        'prefix': '机翻【',
     }
 
     # 运行基本功能所必须的字段, 如果没有配置这些字段, 则应当拒绝启动
@@ -80,6 +81,9 @@ class Config:
         return self.__api_config.get(api_name.lower(), ('', ''))
 
     def get_user_config(self, channel: str, user: str, key: str, _fallback: any = None) -> dict:
+        if _fallback is None:
+            _fallback = self.__VALID_FIELDS.get(key, None)
+
         return self.__channel_config.get(channel, {}).get(user, {}).get(key, _fallback)
 
     def get_user(self, channel: str, user: str) -> dict:
