@@ -88,7 +88,7 @@ class MyClient(discord.Client):
                 await asyncio.sleep(send_lag - elapse)
 
             for dst_text in dst_texts:
-                texts = utils.slice_text(dst_text, config.get_user_config(channel_id, user, 'prefix'))
+                texts = utils.slice_text(dst_text, 20, config.get_user_config(channel_id, user, 'prefix'))
 
                 for text in texts:
                     await self.__danmaku_senders[channel_id].send(
