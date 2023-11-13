@@ -37,7 +37,7 @@ class MyClient(discord.Client):
         pass
 
     async def on_message(self, message):
-        elapse = utils.get_ms_time()
+        start_time = utils.get_ms_time()
 
         if message.author == self.user:
             return
@@ -83,12 +83,13 @@ class MyClient(discord.Client):
         if config.get_user_config(channel_id, user, 'send')== 'live':
             # Wait for lag
             send_lag = int(config.get_user_config(channel_id, user, 'send_lag'))
-            elapse = (utils.get_ms_time() - elapse) / 1000
-            if elapse < send_lag:
-                await asyncio.sleep(send_lag - elapse)
 
             for dst_text in dst_texts:
                 texts = utils.slice_text(dst_text, 20, config.get_user_config(channel_id, user, 'prefix'))
+
+                elapse = (utils.get_ms_time() - start_time) / 1000
+                if elapse < send_lag:
+                    await asyncio.sleep(send_lag - elapse)
 
                 for text in texts:
                     await self.__danmaku_senders[channel_id].send(

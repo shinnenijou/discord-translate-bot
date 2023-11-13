@@ -39,6 +39,9 @@ def slice_text(text: str, max_length: int = 20, prefix: str = '机翻【', suffi
     if text.find('(') != -1:
         text = text[:text.find('(')]
 
+    if text.find('（') != -1:
+        text = text[:text.find('（')]
+
     texts = []
     text_max_length = max_length - len(prefix) - len(suffix)
     if len(text) <= text_max_length:
