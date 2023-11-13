@@ -36,7 +36,7 @@ def get_hms_time():
 
 
 def slice_text(text: str, max_length: int = 20, prefix: str = '机翻【', suffix: str = '】') -> list:
-    text = text[:text.find('（')]
+    text = text[:text.find('(')]
     texts = []
     text_max_length = max_length - len(prefix) - len(suffix)
     if len(text) <= text_max_length:
